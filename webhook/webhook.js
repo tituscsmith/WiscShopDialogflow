@@ -4,8 +4,8 @@ const app = express()
 const fetch = require('node-fetch')
 const base64 = require('base-64')
 
-let username = "";
-let password = "";
+var username = "";
+var password = "";
 let token = "";
 
 USE_LOCAL_ENDPOINT = false;
@@ -31,34 +31,63 @@ async function getToken () {
   const serverReturn = await fetch(ENDPOINT_URL + '/login',request)
   const serverResponse = await serverReturn.json()
   token = serverResponse.token
-
+  console.log(token);
   return token;
 }
 
 app.get('/', (req, res) => res.send('online'))
 app.post('/', express.json(), (req, res) => {
   const agent = new WebhookClient({ request: req, response: res })
-
   function welcome () {
     agent.add('Webhook works!')
+    console.log("Welcome Called");
     console.log(ENDPOINT_URL)
   }
 
-  async function login () {
-    // You need to set this from `username` entity that you declare in DialogFlow
-    username = null
-    // You need to set this from password entity that you declare in DialogFlow
-    password = null
-    await getToken()
+  // async function login () {
     
-    agent.add(token)
-  }
+  //   console.log("BLAH")
+  //   console.log(username + " " + password)
+  //   // You need to set this from `username` entity that you declare in DialogFlow
+    
+  //   // You need to set this from password entity that you declare in DialogFlow
+  //   await getToken()
+  //   console.log(token)
 
+  //   // agent.add("LOGGED IN");
+  // }
+
+  function gotUsername(){
+    console.log("gotUsername Called");
+
+    username = agent.parameters.username;
+    console.log(username)
+  }
+  async function gotPassword(){
+    console.log("gotPassword Called");
+    password = agent.parameters.password;
+    let token = await getToken();
+    if(token === undefined){
+      agent.add("LOG IN FAILED")
+    }
+    else{
+      agent.add("LOG IN SUCCESS");
+    }
+    // agent.add(token);
+  }
 
   let intentMap = new Map()
   intentMap.set('Default Welcome Intent', welcome)
+
+
+  // intentMap.set('Login', login);
+  intentMap.set('UserProvidesUsername', gotUsername)
+  intentMap.set('UserProvidesPassword', gotPassword)
+
+
+  
   // You will need to declare this `Login` content in DialogFlow to make this work
-  intentMap.set('Login', login) 
+  // intentMap.set('Login', login) 
   agent.handleRequest(intentMap)
 })
 
