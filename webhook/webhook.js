@@ -76,11 +76,68 @@ app.post('/', express.json(), (req, res) => {
     // agent.add(token);
   }
 
+  async function getProductByCategory(){
+
+    // let item = agent.parameters.clothingitem;
+    // var id = -1;
+    // if(item === 'sweatshirt'){
+    //   id = 2;
+    // }
+    let request = {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token},
+      redirect: 'follow'
+    }
+  
+    const serverReturn = await fetch(ENDPOINT_URL + '/products',request)
+    const serverResponse = await serverReturn.json()
+    data = serverResponse;
+    console.log(data);
+  }
+  async function getCategories(){
+
+    let request = {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token},
+      redirect: 'follow'
+    }
+  
+    const serverReturn = await fetch(ENDPOINT_URL + '/categories',request)
+    const serverResponse = await serverReturn.json()
+    data = serverResponse;
+    console.log(data);
+    // fetch()
+    agent.add("Here are the categories that we have: " + data.categories);
+  }
+  async function getCategoryTags(){
+    console.log("getCategoryTags");
+    let request = {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token},
+      redirect: 'follow'
+    }
+  
+    const serverReturn = await fetch(ENDPOINT_URL + '/categories/'+agent.parameters.clothingitem + '/tags/',request)
+    const serverResponse = await serverReturn.json()
+    data = serverResponse;
+    console.log(data.tags);
+    // fetch()
+    agent.add("Here are the tags: " + data.tags);
+  }
+
+
   let intentMap = new Map()
   intentMap.set('Default Welcome Intent', welcome)
+  intentMap.set('getProductByCategory', getProductByCategory)
 
 
   // intentMap.set('Login', login);
+  intentMap.set('getCategories', getCategories)
+  intentMap.set('getCategoryTags', getCategoryTags)
+
   intentMap.set('UserProvidesUsername', gotUsername)
   intentMap.set('UserProvidesPassword', gotPassword)
 
