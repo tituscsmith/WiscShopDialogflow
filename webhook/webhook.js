@@ -7,7 +7,7 @@ const base64 = require('base-64')
 var username = "";
 var password = "";
 let token = "";
-
+var products = [];
 USE_LOCAL_ENDPOINT = false;
 // set this flag to true if you want to use a local endpoint
 // set this flag to false if you want to use the online endpoint
@@ -17,6 +17,7 @@ ENDPOINT_URL = "http://127.0.0.1:5000"
 } else{
 ENDPOINT_URL = "https://mysqlcs639.cs.wisc.edu"
 }
+
 
 
 
@@ -43,46 +44,118 @@ app.post('/', express.json(), (req, res) => {
     console.log("Welcome Called");
     console.log(ENDPOINT_URL)
   }
-
-  // async function login () {
-    
-  //   console.log("BLAH")
-  //   console.log(username + " " + password)
-  //   // You need to set this from `username` entity that you declare in DialogFlow
-    
-  //   // You need to set this from password entity that you declare in DialogFlow
-  //   await getToken()
-  //   console.log(token)
-
-  //   // agent.add("LOGGED IN");
-  // }
-
-  function gotUsername(){
-    console.log("gotUsername Called");
-
-    username = agent.parameters.username;
-    console.log(username)
-  }
-  async function gotPassword(){
-    console.log("gotPassword Called");
-    password = agent.parameters.password;
-    let token = await getToken();
-    if(token === undefined){
-      agent.add("LOG IN FAILED")
+  
+  //getter functions for all products, called in when login occurs
+  async function getAllProducts(){
+    console.log("calling getAllproducts");
+    let request = {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token},
+      redirect: 'follow'
     }
-    else{
-      agent.add("LOG IN SUCCESS");
-    }
-    // agent.add(token);
+  
+    const serverReturn = await fetch(ENDPOINT_URL + '/products',request)
+    const serverResponse = await serverReturn.json()
+    // data = serverResponse;
+    console.log(serverResponse);
+    products = serverResponse;
   }
 
+  function getIdByProductName(name){
+    console.log("getIdByProductName");
+    var arr = Object.values(products)[0];
+    for (var key in arr) {
+      if (arr.hasOwnProperty(key)) {  
+        if(arr[key].name === name){
+          console.log(arr[key].id);
+          return arr[key].id;
+        }
+      }
+   } 
+  }
+
+  async function sendMessage(query, isUser){
+    let request = {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token,
+              'body': {
+                "date": new Date().toISOString(),
+                "isUser":isUser,
+                "text": query,
+              }},
+      redirect: 'follow'
+    }
+  
+    const serverReturn = await fetch(ENDPOINT_URL + '/application/messages',request)
+    const serverResponse = await serverReturn.json()
+    console.log(serverResponse);
+  }
+
+  function navigate(){
+    let url = '/titus';
+    console.log(agent.parameters.clothingitem);
+    if(agent.parameters.clothingitem !== 'home'){
+      url = url.concat('/' + agent.parameters.clothingitem);
+    }
+    agent.add('Going to ' + agent.parameters.clothingitem + ' page.');
+    //global.windowVar.location.href = url; //relative to domain
+    // app.get('/from', (req, res) => {
+    //   res.redirect(url);
+    // });
+    console.log(url);
+    app.get('/', (req, res) => {
+      res.url = url;
+      next();
+    });
+  }
+
+  async function getProductAndReviews(){
+    console.log("getProductReviews Called")
+    console.log(agent.context.get('userprovidesproduct').parameters.productname);
+    let productname = agent.context.get('userprovidesproduct').parameters.productname;
+    let id = getIdByProductName(productname);
+    console.log(id);
+
+    //Request for product
+    let request = {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token},
+      redirect: 'follow'
+    }
+  
+    const serverReturn = await fetch(ENDPOINT_URL + '/products/' + id,request)
+    const serverResponse = await serverReturn.json()
+    details = serverResponse;
+    var reviews = '';
+
+    //If user wants reviews
+    if(agent.query === 'yes'){
+      request = {
+        method: 'GET',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token},
+        redirect: 'follow'
+      }
+    
+      const serverReturn = await fetch(ENDPOINT_URL + '/products/' + id + '/reviews',request)
+      const serverResponse = await serverReturn.json()
+      reviews = serverResponse;
+    }
+    console.log(details);
+    console.log(reviews);
+
+    agent.add("Described as " + details.description + " for a price of $" + details.price + " " + reviews);
+   
+    //Get id of product and then get details and reviews of that product
+  }
+
+
+
+  //Required methods
   async function getProductByCategory(){
-
-    // let item = agent.parameters.clothingitem;
-    // var id = -1;
-    // if(item === 'sweatshirt'){
-    //   id = 2;
-    // }
     let request = {
       method: 'GET',
       headers: {'Content-Type': 'application/json',
@@ -95,6 +168,7 @@ app.post('/', express.json(), (req, res) => {
     data = serverResponse;
     console.log(data);
   }
+
   async function getCategories(){
 
     let request = {
@@ -111,6 +185,7 @@ app.post('/', express.json(), (req, res) => {
     // fetch()
     agent.add("Here are the categories that we have: " + data.categories);
   }
+
   async function getCategoryTags(){
     console.log("getCategoryTags");
     let request = {
@@ -125,21 +200,50 @@ app.post('/', express.json(), (req, res) => {
     data = serverResponse;
     console.log(data.tags);
     // fetch()
-    agent.add("Here are the tags: " + data.tags);
+    agent.add("Here are the tags: " + data.tags + " for " + agent.parameters.clothingitem);
   }
+
+
+  //LOGIN FUNCTIONS
+  function gotUsername(){
+    console.log("gotUsername Called");
+
+    username = agent.parameters.username;
+    console.log(username)
+  }
+  async function gotPassword(){
+    console.log("gotPassword Called");
+    password = agent.parameters.password;
+    let token = await getToken();
+    if(token === undefined){
+      agent.add("LOG IN FAILED")
+    }
+    else{
+      agent.add("LOG IN SUCCESS");
+    }
+
+    getAllProducts();
+    // agent.add(token);
+  }
+
+
+
 
 
   let intentMap = new Map()
   intentMap.set('Default Welcome Intent', welcome)
   intentMap.set('getProductByCategory', getProductByCategory)
-
-
-  // intentMap.set('Login', login);
   intentMap.set('getCategories', getCategories)
   intentMap.set('getCategoryTags', getCategoryTags)
 
   intentMap.set('UserProvidesUsername', gotUsername)
   intentMap.set('UserProvidesPassword', gotPassword)
+  intentMap.set('Navigate', navigate)
+  intentMap.set('getProductReviews', getProductAndReviews)
+
+
+  intentMap.set('Login', login)
+
 
 
   
