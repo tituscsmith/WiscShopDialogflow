@@ -137,13 +137,13 @@ app.post('/', express.json(), (req, res) => {
   }
 
   async function getProductAndReviews(){
-    console.log("getProductReviews Called")
-    console.log(agent.context.get('userprovidesproduct').parameters.productname);
+    console.log("getProductReviews Called " + agent.query);
+    // console.log(agent.context.get('userprovidesproduct').parameters.productname);
     let productname = agent.context.get('userprovidesproduct').parameters.productname;
     let id = getIdByProductName(productname);
-    console.log(id);
+    // console.log(id);
 
-    //Request for product
+    //Product Detail API Call
     let request = {
       method: 'GET',
       headers: {'Content-Type': 'application/json',
@@ -151,42 +151,54 @@ app.post('/', express.json(), (req, res) => {
       redirect: 'follow'
     }
   
-    const serverReturn = await fetch(ENDPOINT_URL + '/products/' + id,request)
-    const serverResponse = await serverReturn.json()
+    var serverReturn = await fetch(ENDPOINT_URL + '/products/' + id,request)
+    var serverResponse = await serverReturn.json()
     details = serverResponse;
+
     var reviews = '';
+    //Review API Call
+    request = {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token},
+      redirect: 'follow'
+    }
+  
+    serverReturn = await fetch(ENDPOINT_URL + '/products/' + id + '/reviews',request)
+    serverResponse = await serverReturn.json()
+    reviews = serverResponse;
 
     //If user wants reviews
     if(agent.query === 'yes'){
-      request = {
-        method: 'GET',
-        headers: {'Content-Type': 'application/json',
-                  'x-access-token': token},
-        redirect: 'follow'
-      }
-    
-      const serverReturn = await fetch(ENDPOINT_URL + '/products/' + id + '/reviews',request)
-      const serverResponse = await serverReturn.json()
-      reviews = serverResponse;
+      console.log("yes");
+      agent.add(productname +" is described as \"" + details.description + "\" for a price of $" + details.price + ". " + getReviewString(reviews));
+
+    }//user just wants product reviews
+    else{
+      console.log("else");
+      agent.add(productname +" is described as \"" + details.description + "\" for a price of $" + details.price + ".");
     }
     console.log(details);
     console.log(reviews);
 
-    agent.add("Described as " + details.description + " for a price of $" + details.price + " " + getReviewString(reviews));
    
     //Get id of product and then get details and reviews of that product
   }
 
   //Parses a review string
   function getReviewString(reviews){
-    var reviewString = '';
+    var reviewString = 'Here are some reviews: ';
     var arr = Object.values(reviews)[0];
+    var counter = 0;
     for (var key in arr) {
+      counter++;
       if (arr.hasOwnProperty(key)) {  
         reviewString += arr[key].text;
       }
    }
-
+   if(counter===0){
+     return "There are no applicable reviews."
+   }
 
    return reviewString;
   }
