@@ -92,23 +92,48 @@ app.post('/', express.json(), (req, res) => {
     const serverResponse = await serverReturn.json()
     console.log(serverResponse);
   }
+//   fetch('https://mysqlcs639.cs.wisc.edu/activities/' + id, { method: 'PUT', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'x-access-token': this.props.token
+// },
+// body: JSON.stringify({
+//   name: name,
+//   duration: duration,
+//   calories: calories,
+//   date: date,
 
-  function navigate(){
-    let url = '/titus';
-    console.log(agent.parameters.clothingitem);
-    if(agent.parameters.clothingitem !== 'home'){
-      url = url.concat('/' + agent.parameters.clothingitem);
-    }
+// })}).then(this.props.fetchTodayData()).catch(error => console.log(error));
+
+// }
+  async function navigate(){
+    console.log("navigate");
+    // let url = '/titus';
+    // console.log(agent.parameters.clothingitem);
+    // let page;
+    // if(agent.parameters.clothingitem !== 'home'){
+    //   page = agent.parameters.clothingitem;
+    //   // console.log(ENDPOINT_URL.concat('/' + agent.parameters.clothingitem));
+    //   // ENDPOINT_URL = ENDPOINT_URL.concat('/' + agent.parameters.clothingitem);
+    //   ENDPOINT_URL = ENDPOINT_URL.concat('/titus/hats');
+    //   console.log(ENDPOINT_URL);
+    // }
     agent.add('Going to ' + agent.parameters.clothingitem + ' page.');
-    //global.windowVar.location.href = url; //relative to domain
-    // app.get('/from', (req, res) => {
-    //   res.redirect(url);
-    // });
-    console.log(url);
-    app.get('/', (req, res) => {
-      res.url = url;
-      next();
-    });
+    console.log(token);
+    let request = {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token}, 
+                'body': JSON.stringify({
+                  "back": false,
+                "dialogflowUpdated": true,
+                "page": "/titus/hats"
+
+                }),      
+    }
+  
+
+    const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+    const serverResponse = await serverReturn.json()
+    console.log(serverReturn);
+    console.log(serverResponse);
   }
 
   async function getProductAndReviews(){
@@ -147,11 +172,24 @@ app.post('/', express.json(), (req, res) => {
     console.log(details);
     console.log(reviews);
 
-    agent.add("Described as " + details.description + " for a price of $" + details.price + " " + reviews);
+    agent.add("Described as " + details.description + " for a price of $" + details.price + " " + getReviewString(reviews));
    
     //Get id of product and then get details and reviews of that product
   }
 
+  //Parses a review string
+  function getReviewString(reviews){
+    var reviewString = '';
+    var arr = Object.values(reviews)[0];
+    for (var key in arr) {
+      if (arr.hasOwnProperty(key)) {  
+        reviewString += arr[key].text;
+      }
+   }
+
+
+   return reviewString;
+  }
 
 
   //Required methods
@@ -242,7 +280,7 @@ app.post('/', express.json(), (req, res) => {
   intentMap.set('getProductReviews', getProductAndReviews)
 
 
-  intentMap.set('Login', login)
+  // intentMap.set('Login', login)
 
 
 
