@@ -41,7 +41,6 @@ app.post('/', express.json(), (req, res) => {
   const agent = new WebhookClient({ request: req, response: res })
   function welcome () {
     agent.add('Webhook works!')
-    console.log("Welcome Called");
     // console.log(ENDPOINT_URL)
   }
   
@@ -57,8 +56,6 @@ app.post('/', express.json(), (req, res) => {
   
     const serverReturn = await fetch(ENDPOINT_URL + '/products',request)
     const serverResponse = await serverReturn.json()
-    // data = serverResponse;
-    // console.log(serverResponse);
     products = serverResponse;
   }
 
@@ -68,7 +65,6 @@ app.post('/', express.json(), (req, res) => {
     for (var key in arr) {
       if (arr.hasOwnProperty(key)) {  
         if(arr[key].name === name){
-          console.log(arr[key].id);
           return arr[key].id;
         }
       }
@@ -100,22 +96,46 @@ app.post('/', express.json(), (req, res) => {
         agent.add("Please login to access the shop's features.");
         return;
      }
-    agent.add('Going to ' + agent.parameters.clothingcategory + ' page.');
-    console.log(token);
-    let request = {
-      method: 'PUT',
-      headers: {'Content-Type': 'application/json',
-                'x-access-token': token}, 
-                'body': JSON.stringify({
-                  "back": false,
-                "dialogflowUpdated": true,
-                "page": "/titus/hats"
-                }),      
-    }
-  
+    page =  agent.parameters.page;
+    agent.add('Going to ' + page+ ' page.');
 
-    const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
-    const serverResponse = await serverReturn.json()
+    //Go to home page
+    if(page === 'home' ){
+      let request = {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token}, 
+                  'body': JSON.stringify({
+                    "back": false,
+                  "dialogflowUpdated": true,
+                  "page": "/titus"
+                  }),      
+      }
+    
+  
+      const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+      const serverResponse = await serverReturn.json()
+    }
+
+    //Not the home page
+    else{
+      console.log(token);
+      let request = {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token}, 
+                  'body': JSON.stringify({
+                    "back": false,
+                  "dialogflowUpdated": true,
+                  "page": "/titus/" + page
+                  }),      
+      }
+    
+  
+      const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+      const serverResponse = await serverReturn.json()
+    }
+   
 
   }
   async function purchaseItems(){
@@ -123,7 +143,7 @@ app.post('/', express.json(), (req, res) => {
       agent.add("Please login to access the shop's features.");
       return;
    }
-  agent.add('Going to ' + agent.parameters.clothingcategory + ' page.');
+  agent.add('Here is your order for today.');
   console.log(token);
   let request = {
     method: 'PUT',
@@ -147,6 +167,21 @@ app.post('/', express.json(), (req, res) => {
       agent.add("Please login to access the shop's features.");
       return;
    }
+  }
+
+  async function getCategoryByProductId(id){
+    //Product Detail API Call
+    let request = {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token},
+      redirect: 'follow'
+    }
+  
+    var serverReturn = await fetch(ENDPOINT_URL + '/products/' + id,request)
+    var serverResponse = await serverReturn.json()
+    details = serverResponse;
+    return details.category;
   }
   async function getProductAndReviews(){
     //Check system is logged in
@@ -259,6 +294,7 @@ app.post('/', express.json(), (req, res) => {
   //   agent.add("You have " + serverReturn.count + " of " + product + ". How many would you like to remove?");
   //   const serverResponse = await serverReturn.json()
   // }
+  
   async function userProvidesRemoveProductQuantity(){
 
     let productname = agent.context.get('userprovidesproduct').parameters.productname;
@@ -284,7 +320,18 @@ app.post('/', express.json(), (req, res) => {
    
     agent.add("Deleted " + i + " of " + productname + " to your cart.");
   }
+  async function clearCartYes(){
+    let request = {
+      method: 'DELETE',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token}, 
+    }
 
+    const serverReturn = await fetch(ENDPOINT_URL + '/application/products/', request)
+    const serverResponse = await serverReturn.json()
+
+    agent.add("Cleared all items out of cart")
+  }
    async function infoAboutCart(){
     console.log("infoAboutCart called");
     let request = {
@@ -296,7 +343,8 @@ app.post('/', express.json(), (req, res) => {
     var totalCost = 0;
     var numItems = 0;
     var types = [{"category": "tees", "quantity": 0}, {"category": "leggings", "quantity": 0},
-    {"category": "bottoms", "quantity": 0},{"category": "sweatshirts", "quantity": 0}, {"category": "plushes", "quantity": 0}];
+    {"category": "bottoms", "quantity": 0},{"category": "sweatshirts", "quantity": 0}, 
+    {"category": "plushes", "quantity": 0}, {"category": "hats", "quantity": 0}];
     const serverReturn = await fetch(ENDPOINT_URL + '/application/products/', request)
     const serverResponse = await serverReturn.json()
     // console.log(serverResponse);
@@ -332,6 +380,8 @@ app.post('/', express.json(), (req, res) => {
     messageString+= '' + types[3].quantity+ " sweatshirts, ";
     messageString+= '' + types[2].quantity+ " bottoms, ";
     messageString+= '' + types[1].quantity + " leggings, ";
+    messageString+= '' + types[5].quantity + " hats, ";
+
     messageString+= ' and ' + types[4].quantity + " plushes.";
     return messageString;
   }
@@ -424,7 +474,66 @@ app.post('/', express.json(), (req, res) => {
     agent.add("Here are the tags: " + data.tags + " for " + agent.parameters.clothingcategory);
   }
 
-
+  async function userProvidesProductMedium(){
+    console.log("userProvidesProductMedium");
+    if(agent.query === 'navigate'){
+      let productname = agent.context.get('userprovidesproduct').parameters.productname;
+      let id = await getIdByProductName(productname);
+      console.log(id);
+      let category = await getCategoryByProductId(id);
+      console.log(category);
+  console.log("/titus/" + category + "/products/" + id);
+      let request = {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token}, 
+                  'body': JSON.stringify({
+                    "back": false,
+                  "dialogflowUpdated": true,
+                  "page": "/titus/" + category + "/products/" + id
+                  }),      
+      }
+    
+  
+      const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+      const serverResponse = await serverReturn.json()
+      agent.add("Navigating to the page for " + productname);
+    }
+    else{
+      
+      agent.add("Would you like reviews for this product as well?")
+      agent.context.set({
+        'name': 'detailsaboutproduct',
+        'lifespan': 5,
+      });
+    }
+  }
+  async function userProvidesCartMedium(){
+    console.log("userProvidesCartMedium");
+    if(agent.query === 'navigate'){
+      console.log("if");
+      let request = {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token}, 
+                  'body': JSON.stringify({
+                    "back": false,
+                  "dialogflowUpdated": true,
+                  "page": "/titus/cart"
+                  }),      
+      }
+    
+  
+      const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+      const serverResponse = await serverReturn.json()
+      agent.add("Navigating to your cart");
+    }
+    else{
+      console.log("else");
+      
+      await infoAboutCart();
+    }
+  }
   //LOGIN FUNCTIONS
   function gotUsername(){
     console.log("gotUsername Called");
@@ -454,15 +563,19 @@ app.post('/', express.json(), (req, res) => {
 
   intentMap.set('UserProvidesUsername', gotUsername)
   intentMap.set('UserProvidesPassword', gotPassword)
-  intentMap.set('Navigate', navigate)
+  intentMap.set('navigate', navigate)
   intentMap.set('getProductReviews', getProductAndReviews)
   intentMap.set('getProduct', getProduct)
-  intentMap.set('checkCart', infoAboutCart);
+  intentMap.set('clearCartYes', clearCartYes);
+  // intentMap.set('checkCart', infoAboutCart);
 
   intentMap.set('userProvidesAddProductQuantity', userProvidesAddProductQuantity)
   // intentMap.set('removeProductFromCart', removeProductFromCart);
   intentMap.set('userProvidesRemoveProductQuantity', userProvidesRemoveProductQuantity)
   intentMap.set('purchaseItems', purchaseItems)
+  intentMap.set('userProvidesProductMedium', userProvidesProductMedium)
+  intentMap.set('userProvidesCartMedium', userProvidesCartMedium)
+
   intentMap.set('filterByTag', filterByTags)
 
 
