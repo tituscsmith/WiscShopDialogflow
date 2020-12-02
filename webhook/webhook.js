@@ -100,7 +100,7 @@ app.post('/', express.json(), (req, res) => {
         agent.add("Please login to access the shop's features.");
         return;
      }
-    agent.add('Going to ' + agent.parameters.clothingitem + ' page.');
+    agent.add('Going to ' + agent.parameters.clothingcategory + ' page.');
     console.log(token);
     let request = {
       method: 'PUT',
@@ -116,8 +116,30 @@ app.post('/', express.json(), (req, res) => {
 
     const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
     const serverResponse = await serverReturn.json()
-    console.log(serverReturn);
-    console.log(serverResponse);
+
+  }
+  async function purchaseItems(){
+    if(!token){
+      agent.add("Please login to access the shop's features.");
+      return;
+   }
+  agent.add('Going to ' + agent.parameters.clothingcategory + ' page.');
+  console.log(token);
+  let request = {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json',
+              'x-access-token': token}, 
+              'body': JSON.stringify({
+                "back": false,
+              "dialogflowUpdated": true,
+              "page": "/titus/cart-confirmed"
+              }),      
+  }
+
+
+  const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+  const serverResponse = await serverReturn.json()
+
   }
 
   function getProduct(){
@@ -354,7 +376,32 @@ app.post('/', express.json(), (req, res) => {
     // fetch()
     agent.add("Here are the categories that we have: " + data.categories);
   }
+  async function filterByTags(){
+    console.log("filterByTags called");
 
+    console.log(agent.parameters.tagDescriptors);
+    console.log(agent.parameters.tagDescriptors.length);
+
+    //POST to application tags
+    for(let i = 0; i<agent.parameters.tagDescriptors.length; i++){
+      console.log("looping");
+
+      let request = {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token},    
+      }
+    
+      console.log(agent.parameters.tagDescriptors[i]);
+      await fetch(ENDPOINT_URL + '/application/tags/' + agent.parameters.tagDescriptors[i],request).catch(error => agent.add("Not a valid tag. Please try another one"));
+
+      agent.add("Items filtered by given tags.")
+      // var  serverResponse = await serverReturn.json();
+      // console.log(serverResponse);
+
+    }
+  
+  }
   async function getCategoryTags(){
       //Check system is logged in
       if(!token){
@@ -369,12 +416,12 @@ app.post('/', express.json(), (req, res) => {
       redirect: 'follow'
     }
   
-    const serverReturn = await fetch(ENDPOINT_URL + '/categories/'+agent.parameters.clothingitem + '/tags/',request)
+    const serverReturn = await fetch(ENDPOINT_URL + '/categories/'+agent.parameters.clothingcategory + '/tags/',request)
     const serverResponse = await serverReturn.json()
     data = serverResponse;
     console.log(data.tags);
     // fetch()
-    agent.add("Here are the tags: " + data.tags + " for " + agent.parameters.clothingitem);
+    agent.add("Here are the tags: " + data.tags + " for " + agent.parameters.clothingcategory);
   }
 
 
@@ -415,6 +462,9 @@ app.post('/', express.json(), (req, res) => {
   intentMap.set('userProvidesAddProductQuantity', userProvidesAddProductQuantity)
   // intentMap.set('removeProductFromCart', removeProductFromCart);
   intentMap.set('userProvidesRemoveProductQuantity', userProvidesRemoveProductQuantity)
+  intentMap.set('purchaseItems', purchaseItems)
+  intentMap.set('filterByTag', filterByTags)
+
 
 
 
