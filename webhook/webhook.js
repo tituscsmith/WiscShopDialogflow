@@ -92,29 +92,14 @@ app.post('/', express.json(), (req, res) => {
     const serverResponse = await serverReturn.json()
     console.log(serverResponse);
   }
-//   fetch('https://mysqlcs639.cs.wisc.edu/activities/' + id, { method: 'PUT', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'x-access-token': this.props.token
-// },
-// body: JSON.stringify({
-//   name: name,
-//   duration: duration,
-//   calories: calories,
-//   date: date,
 
-// })}).then(this.props.fetchTodayData()).catch(error => console.log(error));
-
-// }
   async function navigate(){
     console.log("navigate");
-    // let url = '/titus';
-    // console.log(agent.parameters.clothingitem);
-    // let page;
-    // if(agent.parameters.clothingitem !== 'home'){
-    //   page = agent.parameters.clothingitem;
-    //   // console.log(ENDPOINT_URL.concat('/' + agent.parameters.clothingitem));
-    //   // ENDPOINT_URL = ENDPOINT_URL.concat('/' + agent.parameters.clothingitem);
-    //   ENDPOINT_URL = ENDPOINT_URL.concat('/titus/hats');
-    //   console.log(ENDPOINT_URL);
-    // }
+      //Check system is logged in
+      if(!token){
+        agent.add("Please login to access the shop's features.");
+        return;
+     }
     agent.add('Going to ' + agent.parameters.clothingitem + ' page.');
     console.log(token);
     let request = {
@@ -136,7 +121,19 @@ app.post('/', express.json(), (req, res) => {
     console.log(serverResponse);
   }
 
+  function getProduct(){
+    if(!token){
+      agent.add("Please login to access the shop's features.");
+      return;
+   }
+  }
   async function getProductAndReviews(){
+    //Check system is logged in
+    if(!token){
+      agent.add("Please login to access the shop's features.");
+      return;
+   }
+    // checkedLogin();
     console.log("getProductReviews Called " + agent.query);
     // console.log(agent.context.get('userprovidesproduct').parameters.productname);
     let productname = agent.context.get('userprovidesproduct').parameters.productname;
@@ -190,22 +187,30 @@ app.post('/', express.json(), (req, res) => {
     var reviewString = 'Here are some reviews: ';
     var arr = Object.values(reviews)[0];
     var counter = 0;
+    var totalRating = 0;
     for (var key in arr) {
       counter++;
       if (arr.hasOwnProperty(key)) {  
         reviewString += arr[key].text;
+        totalRating += arr[key].stars;
       }
    }
    if(counter===0){
      return "There are no applicable reviews."
    }
 
+   reviewString= reviewString.concat(". The average rating is " + totalRating/counter);
    return reviewString;
   }
 
 
   //Required methods
   async function getProductByCategory(){
+      //Check system is logged in
+      if(!token){
+        agent.add("Please login to access the shop's features.");
+        return;
+     }
     let request = {
       method: 'GET',
       headers: {'Content-Type': 'application/json',
@@ -220,7 +225,11 @@ app.post('/', express.json(), (req, res) => {
   }
 
   async function getCategories(){
-
+  //Check system is logged in
+  if(!token){
+    agent.add("Please login to access the shop's features.");
+    return;
+ }
     let request = {
       method: 'GET',
       headers: {'Content-Type': 'application/json',
@@ -237,6 +246,11 @@ app.post('/', express.json(), (req, res) => {
   }
 
   async function getCategoryTags(){
+      //Check system is logged in
+      if(!token){
+        agent.add("Please login to access the shop's features.");
+        return;
+     }
     console.log("getCategoryTags");
     let request = {
       method: 'GET',
@@ -266,19 +280,15 @@ app.post('/', express.json(), (req, res) => {
     password = agent.parameters.password;
     let token = await getToken();
     if(token === undefined){
-      agent.add("LOG IN FAILED")
+      agent.add("Log in failed.")
     }
     else{
-      agent.add("LOG IN SUCCESS");
+      agent.add("Log in success!");
     }
 
     getAllProducts();
     // agent.add(token);
   }
-
-
-
-
 
   let intentMap = new Map()
   intentMap.set('Default Welcome Intent', welcome)
@@ -290,6 +300,8 @@ app.post('/', express.json(), (req, res) => {
   intentMap.set('UserProvidesPassword', gotPassword)
   intentMap.set('Navigate', navigate)
   intentMap.set('getProductReviews', getProductAndReviews)
+  intentMap.set('getProduct', getProduct)
+
 
 
   // intentMap.set('Login', login)
