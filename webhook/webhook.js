@@ -32,7 +32,7 @@ async function getToken () {
   const serverReturn = await fetch(ENDPOINT_URL + '/login',request)
   const serverResponse = await serverReturn.json()
   token = serverResponse.token
-  console.log(token);
+  // console.log(token);
   return token;
 }
 
@@ -42,7 +42,7 @@ app.post('/', express.json(), (req, res) => {
   function welcome () {
     agent.add('Webhook works!')
     console.log("Welcome Called");
-    console.log(ENDPOINT_URL)
+    // console.log(ENDPOINT_URL)
   }
   
   //getter functions for all products, called in when login occurs
@@ -58,7 +58,7 @@ app.post('/', express.json(), (req, res) => {
     const serverReturn = await fetch(ENDPOINT_URL + '/products',request)
     const serverResponse = await serverReturn.json()
     // data = serverResponse;
-    console.log(serverResponse);
+    // console.log(serverResponse);
     products = serverResponse;
   }
 
@@ -110,7 +110,6 @@ app.post('/', express.json(), (req, res) => {
                   "back": false,
                 "dialogflowUpdated": true,
                 "page": "/titus/hats"
-
                 }),      
     }
   
@@ -135,10 +134,8 @@ app.post('/', express.json(), (req, res) => {
    }
     // checkedLogin();
     console.log("getProductReviews Called " + agent.query);
-    // console.log(agent.context.get('userprovidesproduct').parameters.productname);
     let productname = agent.context.get('userprovidesproduct').parameters.productname;
     let id = getIdByProductName(productname);
-    // console.log(id);
 
     //Product Detail API Call
     let request = {
@@ -153,6 +150,7 @@ app.post('/', express.json(), (req, res) => {
     details = serverResponse;
 
     var reviews = '';
+
     //Review API Call
     request = {
       method: 'GET',
@@ -175,14 +173,9 @@ app.post('/', express.json(), (req, res) => {
       console.log("else");
       agent.add(productname +" is described as \"" + details.description + "\" for a price of $" + details.price + ".");
     }
-    console.log(details);
-    console.log(reviews);
-
-   
-    //Get id of product and then get details and reviews of that product
   }
 
-  //Parses a review string
+  //Creates a string of reviews for a product
   function getReviewString(reviews){
     var reviewString = 'Here are some reviews: ';
     var arr = Object.values(reviews)[0];
@@ -203,6 +196,123 @@ app.post('/', express.json(), (req, res) => {
    return reviewString;
   }
 
+  async function userProvidesAddProductQuantity(){
+    console.log("userProvidesAddProductQuantity called");
+
+    let productname = agent.context.get('userprovidesproduct').parameters.productname;
+    let id = getIdByProductName(productname);
+    let quantity =  agent.context.get('userprovidesproduct').parameters.quantity;
+
+    if(quantity < 1){
+      agent.add("Invalid quantity");
+      return;
+    }
+    for(let i = 0; i< quantity;  i++){
+      let request = {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token}, 
+      }
+  
+      const serverReturn = await fetch(ENDPOINT_URL + '/application/products/' + id,request)
+      const serverResponse = await serverReturn.json()
+      console.log(serverResponse);
+    }
+   
+    agent.add("Added " + quantity + " of " + productname + " to your cart.");
+  }
+  // async function removeProductFromCart(){
+  //   console.log("removeProductFromCart called");
+  //   let product = agent.parameters.product;
+  //   id = await getIdByProductName(product);
+  //   console.log(id);
+  //   let request = {
+  //     method: 'GET',
+  //     headers: {'Content-Type': 'application/json',
+  //               'x-access-token': token}, 
+  //   }
+
+  //   const serverReturn = await fetch(ENDPOINT_URL + '/application/products/' + id,request)
+
+  //   agent.add("You have " + serverReturn.count + " of " + product + ". How many would you like to remove?");
+  //   const serverResponse = await serverReturn.json()
+  // }
+  async function userProvidesRemoveProductQuantity(){
+
+    let productname = agent.context.get('userprovidesproduct').parameters.productname;
+    let id = getIdByProductName(productname);
+    let quantity =  agent.context.get('userprovidesproduct').parameters.quantity;
+
+    if(quantity < 1){
+      agent.add("Invalid quantity");
+      return;
+    }
+    var i;
+    for(i=0; i< quantity;  i++){
+      let request = {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token}, 
+      }
+  
+      const serverReturn = await fetch(ENDPOINT_URL + '/application/products/' + id,request)
+      const serverResponse = await serverReturn.json()
+      console.log(serverResponse);
+    }
+   
+    agent.add("Deleted " + i + " of " + productname + " to your cart.");
+  }
+
+   async function infoAboutCart(){
+    console.log("infoAboutCart called");
+    let request = {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token}, 
+    }
+
+    var totalCost = 0;
+    var numItems = 0;
+    var types = [{"category": "tees", "quantity": 0}, {"category": "leggings", "quantity": 0},
+    {"category": "bottoms", "quantity": 0},{"category": "sweatshirts", "quantity": 0}, {"category": "plushes", "quantity": 0}];
+    const serverReturn = await fetch(ENDPOINT_URL + '/application/products/', request)
+    const serverResponse = await serverReturn.json()
+    // console.log(serverResponse);
+
+    var arr = Object.values(serverResponse)[0];
+
+    for (var key in arr) {
+      console.log("looping");
+      if (arr.hasOwnProperty(key)) {  
+        totalCost+=(arr[key].price*arr[key].count);
+        numItems+=arr[key].count;
+        for(let i = 0; i<5; i++){
+          if(types[i].category === arr[key].category){
+            console.log("if")
+            types[i].quantity+=arr[key].count;
+          }
+          else{
+            console.log(types[i].category + ' ' + arr[key].category)
+          }
+        }
+      }
+   } 
+   console.log(types[3].quantity);
+
+
+    agent.add("Your cart has " + numItems + " items for a total of $" + totalCost + ". Additionally, " + parseCategoriesFromCartString(types));
+
+  }
+
+  function parseCategoriesFromCartString(types){
+    let messageString = '';
+    messageString+= 'You have ' + types[0].quantity + " tees, ";
+    messageString+= '' + types[3].quantity+ " sweatshirts, ";
+    messageString+= '' + types[2].quantity+ " bottoms, ";
+    messageString+= '' + types[1].quantity + " leggings, ";
+    messageString+= ' and ' + types[4].quantity + " plushes.";
+    return messageString;
+  }
 
   //Required methods
   async function getProductByCategory(){
@@ -287,7 +397,6 @@ app.post('/', express.json(), (req, res) => {
     }
 
     getAllProducts();
-    // agent.add(token);
   }
 
   let intentMap = new Map()
@@ -301,6 +410,13 @@ app.post('/', express.json(), (req, res) => {
   intentMap.set('Navigate', navigate)
   intentMap.set('getProductReviews', getProductAndReviews)
   intentMap.set('getProduct', getProduct)
+  intentMap.set('checkCart', infoAboutCart);
+
+  intentMap.set('userProvidesAddProductQuantity', userProvidesAddProductQuantity)
+  // intentMap.set('removeProductFromCart', removeProductFromCart);
+  intentMap.set('userProvidesRemoveProductQuantity', userProvidesRemoveProductQuantity)
+
+
 
 
 
