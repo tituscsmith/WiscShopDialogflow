@@ -87,55 +87,55 @@ app.post('/', express.json(), (req, res) => {
     const serverResponse = await serverReturn.json()
   }
 
-  async function navigate(){
-    await sendMessage(agent.query, true);
+  // async function navigate(){
+  //   await sendMessage(agent.query, true);
 
-    //Check system is logged in
-      if(!token){
-        agent.add("Please login to access the shop's features.");
-        await sendMessage("Please login to access the shop's features.", false);
-        return;
-     }
-    page =  agent.parameters.page;
-    agent.add('Going to ' + page+ ' page.');
-    await sendMessage('Going to ' + page+ ' page.', false);
+  //   //Check system is logged in
+  //     if(!token){
+  //       agent.add("Please login to access the shop's features.");
+  //       await sendMessage("Please login to access the shop's features.", false);
+  //       return;
+  //    }
+  //   page =  agent.parameters.page;
+  //   agent.add('Going to ' + page+ ' page.');
+  //   await sendMessage('Going to ' + page+ ' page.', false);
 
-    //CASE: Go to home page
-    if(page === 'home' ){
-      let request = {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json',
-                  'x-access-token': token}, 
-                  'body': JSON.stringify({
-                    "back": false,
-                  "dialogflowUpdated": true,
-                  "page": "/titus"
-                  }),      
-      }
+  //   //CASE: Go to home page
+  //   if(page === 'home' ){
+  //     let request = {
+  //       method: 'PUT',
+  //       headers: {'Content-Type': 'application/json',
+  //                 'x-access-token': token}, 
+  //                 'body': JSON.stringify({
+  //                   "back": false,
+  //                 "dialogflowUpdated": true,
+  //                 "page": "/titus"
+  //                 }),      
+  //     }
     
   
-      const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
-      const serverResponse = await serverReturn.json()
-    }
+  //     const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+  //     const serverResponse = await serverReturn.json()
+  //   }
 
-    //CASE: Not the home page
-    else{
-      let request = {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json',
-                  'x-access-token': token}, 
-                  'body': JSON.stringify({
-                    "back": false,
-                  "dialogflowUpdated": true,
-                  "page": "/titus/" + page
-                  }),      
-      }
+  //   //CASE: Not the home page
+  //   else{
+  //     let request = {
+  //       method: 'PUT',
+  //       headers: {'Content-Type': 'application/json',
+  //                 'x-access-token': token}, 
+  //                 'body': JSON.stringify({
+  //                   "back": false,
+  //                 "dialogflowUpdated": true,
+  //                 "page": "/titus/" + page
+  //                 }),      
+  //     }
     
   
-      const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
-      const serverResponse = await serverReturn.json()
-    }
-  }
+  //     const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+  //     const serverResponse = await serverReturn.json()
+  //   }
+  // }
   async function purchaseItems(){
     await sendMessage(agent.query, true);
 
@@ -171,8 +171,13 @@ app.post('/', express.json(), (req, res) => {
       await  sendMessage("Please login to access the shop's features.", false);
       return;
    }
-   agent.add("Say \"navigate\", if you would like to go to the $productname page or \"details\" if you would just like details here.")
-   await sendMessage("Say \"navigate\", if you would like to go to the $productname page or \"details\" if you would just like details here.", false);
+   if(!agent.parameters.productname){
+    agent.add("Please provide a product name to add.");
+    await sendMessage("Please provide a product name to add.", false)
+  }
+
+   agent.add("Say \"navigate\", if you would like to go to the " +  agent.parameters.productname + " page or \"details\" if you would just like details here.")
+   await sendMessage("Say \"navigate\", if you would like to go to the" +  agent.parameters.productname + " page or \"details\" if you would just like details here.", false);
   }
 
   async function getCategoryByProductId(id){
@@ -451,6 +456,13 @@ app.post('/', express.json(), (req, res) => {
   async function filterByTags(){
     await sendMessage(agent.query, true);
     //POST to application tags
+
+    if(!agent.parameters.tagDescriptors){
+      agent.add("What tag would you like to filter by?");
+      await sendMessage("What tag would you like to filter by?", false);
+      return;
+     }
+
     for(let i = 0; i<agent.parameters.tagDescriptors.length; i++){
 
       let request = {
@@ -533,7 +545,6 @@ app.post('/', express.json(), (req, res) => {
     console.log("userProvidesCartMedium");
     await sendMessage(agent.query, true);
     if(agent.query === 'navigate'){
-      console.log("if");
       let request = {
         method: 'PUT',
         headers: {'Content-Type': 'application/json',
@@ -560,11 +571,14 @@ app.post('/', express.json(), (req, res) => {
   async function login(){
     await sendMessage(agent.query, true);
     await sendMessage("Okay, what is your username? State \"It is... <username>\"", false);
+    agent.add("Okay, what is your username? State \"It is... <username>\"");
   }
   //LOGIN FUNCTIONS
   function gotUsername(){
     console.log("gotUsername Called");
     username = agent.parameters.username;
+    agent.add("Okay, what is your password? State \"It is... <password>\"");
+
   }
   async function gotPassword(){
     console.log("gotPassword Called");
@@ -584,11 +598,15 @@ app.post('/', express.json(), (req, res) => {
                 'x-access-token': token}    }
   
     const serverReturn = await fetch(ENDPOINT_URL + '/application/messages',request);
-    console.log(serverReturn);
+    // console.log(serverReturn);
 
     //Get all products
     getAllProducts();
   }
+  // async function(){
+  //   await sendMessage(agent.query, true);
+
+  // }
   async function clearCart(){
     await sendMessage(agent.query, true);
 
@@ -622,11 +640,14 @@ app.post('/', express.json(), (req, res) => {
   }
   async function removeProductFromCart(){
     await sendMessage(agent.query, true);
-    // if(!agent.parameters.clothingcategory){
       agent.add("Are you sure you would like to remove " + agent.parameters.productname + " from your cart?");
       await sendMessage("Are you sure you would like to remove " + agent.parameters.productname + " from your cart?", false);
       return;
-    //  }
+  }
+  async function rejectAddProductToCart(){
+    await sendMessage(agent.query, true);
+    agent.add("Okay, I won't add that item. What else can I do for you?");
+    await sendMessage("Okay, I won't add that item. What else can I do for you?", false);
   }
   async function confirmRemoveProductFromCart(){
     
@@ -637,6 +658,12 @@ app.post('/', express.json(), (req, res) => {
     agent.add("How many of " + product + " would you like to remove from your cart?");
     await sendMessage("How many of " + product + " would you like to remove from your cart?", false);
   }
+  async function rejectRemoveProductFromCart(){
+    await sendMessage(agent.query, true);
+    agent.add("Okay, I won't remove that item. What else can I do for you?");
+    await sendMessage("Okay, I won't remove that item. What else can I do for you?", false);
+  }
+
 
   let intentMap = new Map();
   intentMap.set('Default Welcome Intent', welcome)
@@ -645,8 +672,8 @@ app.post('/', express.json(), (req, res) => {
   intentMap.set('getCategoryTags', getCategoryTags)
 
   intentMap.set('UserProvidesUsername', gotUsername)
-  intentMap.set('UserProvidesPassword', gotPassword)
-  intentMap.set('navigate', navigate)
+  intentMap.set('userProvidesPassword', gotPassword)
+  // intentMap.set('navigate', navigate)
   intentMap.set('getProductReviews', getProductAndReviews)
   intentMap.set('getProduct', getProduct)
   intentMap.set('clearCart', clearCart);
@@ -658,6 +685,8 @@ intentMap.set('Login', login);
   // intentMap.set('checkCart', infoAboutCart);
   intentMap.set('addProductToCart', addProductToCart)
     intentMap.set('removeProductFromCart', removeProductFromCart);
+    intentMap.set('rejectAddProductToCart', rejectAddProductToCart);
+    intentMap.set('rejectRemoveProductFromCart', rejectRemoveProductFromCart);
 
   intentMap.set('confirmAddProductToCart', confirmAddProductToCart)
   intentMap.set('confirmRemoveProductFromCart', confirmRemoveProductFromCart)
