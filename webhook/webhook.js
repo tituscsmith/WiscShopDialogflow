@@ -1,3 +1,6 @@
+//Author: Titus Smith
+//Project: Dialogflow-beta
+//Course: CS 639 Fall 2020
 const express = require('express')
 const { WebhookClient } = require('dialogflow-fulfillment')
 const app = express()
@@ -39,14 +42,18 @@ async function getToken () {
 app.get('/', (req, res) => res.send('online'))
 app.post('/', express.json(), (req, res) => {
   const agent = new WebhookClient({ request: req, response: res })
-  function welcome () {
-    agent.add('Hello! Web hook is connected.')
+  async function welcome () {
+    await sendMessage(agent.query, true);
+
+
+    agent.add('Hello! What can I do for you today?')
+    await sendMessage('Hello! What can I do for you today?', false);
     console.log(ENDPOINT_URL)
   }
   
   //Getter functions for all products, called when login occurs
   async function getAllProducts(){
-    console.log("calling getAllproducts");
+    // console.log("calling getAllproducts");
     let request = {
       method: 'GET',
       headers: {'Content-Type': 'application/json',
@@ -97,8 +104,8 @@ app.post('/', express.json(), (req, res) => {
     return;
  }
 
-  agent.add('Here is your order for today.');
-  await sendMessage('Here is your order for today.', false);
+  agent.add('Here is your order for today. Thanks for shopping with us!');
+  await sendMessage('Here is your order for today. Thanks for shopping with us!', false);
   let request = {
     method: 'PUT',
     headers: {'Content-Type': 'application/json',
@@ -106,7 +113,7 @@ app.post('/', express.json(), (req, res) => {
               'body': JSON.stringify({
                 "back": false,
               "dialogflowUpdated": true,
-              "page": "/titus/cart-confirmed"
+              "page": "/" + username + "/cart-confirmed"
               }),      
   }
 
@@ -155,8 +162,8 @@ app.post('/', express.json(), (req, res) => {
       return;
    }
 
-    agent.add("Okay, I won't navigate to that page. I can navigate to category, product, home, and cart pages. What page would you like to go to?");
-    await sendMessage("Okay, I won't navigate to that page. I can navigate to category, product, home, and cart pages. What page would you like to go to?", false);
+    agent.add("Okay, I won't navigate to that page. I can navigate to specific category, specific product, home, and cart pages. What can I do for you?");
+    await sendMessage("Okay, I won't navigate to that page. I can navigate to specific category, specific product, home, and cart pages. What can I do for you?", false);
   }
    async function confirmNavigate(){
     await sendMessage(agent.query, true);
@@ -186,7 +193,7 @@ app.post('/', express.json(), (req, res) => {
                   'body': JSON.stringify({
                     "back": false,
                   "dialogflowUpdated": true,
-                  "page": "/titus"
+                  "page": "/" + username
                   }),      
       }
     
@@ -204,7 +211,7 @@ app.post('/', express.json(), (req, res) => {
                   'body': JSON.stringify({
                     "back": false,
                   "dialogflowUpdated": true,
-                  "page": "/titus/" + page
+                  "page": "/" + username + "/" + page
                   }),      
       }
     
@@ -426,7 +433,6 @@ app.post('/', express.json(), (req, res) => {
   }
   //Not an intent handler, called by reviewCart
    async function infoAboutCart(){
-    await sendMessage(agent.query, true);
     let request = {
       method: 'GET',
       headers: {'Content-Type': 'application/json',
@@ -493,8 +499,8 @@ app.post('/', express.json(), (req, res) => {
     const serverResponse = await serverReturn.json()
     data = serverResponse;
 
-    agent.add("Alright, here are the categories available today: " + data.categories);
-    await sendMessage("Alright, Here are the categories available today: " + data.categories, false)
+    agent.add("Alright, here are the categories available today: " + data.categories.join(', '));
+    await sendMessage("Alright, Here are the categories available today: " + data.categories.join(', '), false)
 
   }
   async function filterByTags(){
@@ -512,8 +518,8 @@ app.post('/', express.json(), (req, res) => {
     return;
    }
 
-   agent.add("Please confirm that you would like to filter tags by " + agent.parameters.tagDescriptors);
-   await sendMessage("Please confirm that you would like to filter tags by " + agent.parameters.tagDescriptors, false)
+   agent.add("Please confirm that you would like to filter current page by " + agent.parameters.tagDescriptors);
+   await sendMessage("Please confirm that you would like to filter current page by " + agent.parameters.tagDescriptors, false)
 
   }
   async function rejectFilterByTags(){
@@ -590,8 +596,8 @@ app.post('/', express.json(), (req, res) => {
     const serverReturn = await fetch(ENDPOINT_URL + '/categories/'+agent.parameters.clothingcategory + '/tags/',request)
     const serverResponse = await serverReturn.json()
     data = serverResponse;
-    agent.add("Okay " + username + ", Here are the tags for " + agent.parameters.clothingcategory + ": " + data.tags);
-    await sendMessage("Okay " + username + ", Here are the tags for " + agent.parameters.clothingcategory + ": " + data.tags, false);
+    agent.add("Okay " + username + ", Here are the tags for " + agent.parameters.clothingcategory + ": " + data.tags.join(', '));
+    await sendMessage("Okay " + username + ", Here are the tags for " + agent.parameters.clothingcategory + ": " + data.tags.join(', '), false);
   }
 
   async function userProvidesProductMedium(){
@@ -615,7 +621,7 @@ app.post('/', express.json(), (req, res) => {
                   'body': JSON.stringify({
                     "back": false,
                   "dialogflowUpdated": true,
-                  "page": "/titus/" + category + "/products/" + id
+                  "page": "/" + username + "/" + category + "/products/" + id
                   }),      
       }
   
@@ -653,7 +659,7 @@ app.post('/', express.json(), (req, res) => {
                   'body': JSON.stringify({
                     "back": false,
                   "dialogflowUpdated": true,
-                  "page": "/titus/cart"
+                  "page": "/" + username + "/cart"
                   }),      
       }
   
@@ -667,40 +673,7 @@ app.post('/', express.json(), (req, res) => {
     }
   }
 
-  //LOGIN FUNCTIONS --> Can't send messages because no token
-  async function login(){
-    // await sendMessage(agent.query, true);
-    // await sendMessage("Okay, what is your username? State \"It is... <username>\"", false);
-    agent.add("Okay, what is your username? State \"It is... <username>\"");
-  }
-
-  function gotUsername(){
-    username = agent.parameters.username;
-    agent.add("Okay, what is your password? State \"It is... <password>\"");
-
-  }
-  async function gotPassword(){
-    password = agent.parameters.password;
-    let token = await getToken();
-    if(token === undefined){
-      agent.add("Log in failed. Please check your username & password and try again.")
-    }
-    else{
-      agent.add("Log in success. What can I do for you today?");
-    }
-    
-    //Clear all messages in text box
-    let request = {
-      method: 'DELETE',
-      headers: {'Content-Type': 'application/json',
-                'x-access-token': token}    }
   
-    const serverReturn = await fetch(ENDPOINT_URL + '/application/messages',request);
-    // console.log(serverReturn);
-
-    //Get all products
-    getAllProducts();
-  }
 
   async function clearCart(){
     await sendMessage(agent.query, true);
@@ -825,6 +798,52 @@ app.post('/', express.json(), (req, res) => {
 
     agent.add("Okay, I won't remove that item. What else can I do for you?");
     await sendMessage("Okay, I won't remove that item. What else can I do for you?", false);
+  }
+  //LOGIN FUNCTIONS --> Can't send messages because no token
+  async function login(){
+    // await sendMessage(agent.query, true);
+    // await sendMessage("Okay, what is your username? State \"It is... <username>\"", false);
+    agent.add("Okay, what is your username? State \"It is... <username>\"");
+  }
+
+  function gotUsername(){
+    username = agent.parameters.username;
+    agent.add("Okay " + username + ", what is your password? State \"It is... <password>\"");
+
+  }
+  async function gotPassword(){
+    password = agent.parameters.password;
+    let token = await getToken();
+    if(token === undefined){
+      agent.add("Log in failed. Please check your username & password and try again.")
+    }
+    else{
+      agent.add("Log in success. What can I do for you today?");
+      let request = {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token}, 
+                  'body': JSON.stringify({
+                    "back": false,
+                  "dialogflowUpdated": true,
+                  "page": "/" + username
+                  }),      
+      }
+  
+      const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+      const serverResponse = await serverReturn.json()
+    }
+    
+    //Clear all messages in text box
+    let request = {
+      method: 'DELETE',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token}    }
+  
+    const serverReturn = await fetch(ENDPOINT_URL + '/application/messages',request);
+
+    //Get all products
+    getAllProducts();
   }
   //Map intent handlers
   let intentMap = new Map();
