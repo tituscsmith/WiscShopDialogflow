@@ -60,7 +60,6 @@ app.post('/', express.json(), (req, res) => {
   }
 
   function getIdByProductName(name){
-    console.log("getIdByProductName");
     var arr = Object.values(products)[0];
     for (var key in arr) {
       if (arr.hasOwnProperty(key)) {  
@@ -75,31 +74,33 @@ app.post('/', express.json(), (req, res) => {
     let request = {
       method: 'POST',
       headers: {'Content-Type': 'application/json',
-                'x-access-token': token,
-              'body': {
-                "date": new Date().toISOString(),
+                'x-access-token': token},
+
+              'body': JSON.stringify({
                 "isUser":isUser,
-                "text": query,
-              }},
+                "text": query
+              }),      
       redirect: 'follow'
     }
   
     const serverReturn = await fetch(ENDPOINT_URL + '/application/messages',request)
     const serverResponse = await serverReturn.json()
-    console.log(serverResponse);
   }
 
   async function navigate(){
-    console.log("navigate");
-      //Check system is logged in
+    await sendMessage(agent.query, true);
+
+    //Check system is logged in
       if(!token){
         agent.add("Please login to access the shop's features.");
+        await sendMessage("Please login to access the shop's features.", false);
         return;
      }
     page =  agent.parameters.page;
     agent.add('Going to ' + page+ ' page.');
+    await sendMessage('Going to ' + page+ ' page.', false);
 
-    //Go to home page
+    //CASE: Go to home page
     if(page === 'home' ){
       let request = {
         method: 'PUT',
@@ -117,9 +118,8 @@ app.post('/', express.json(), (req, res) => {
       const serverResponse = await serverReturn.json()
     }
 
-    //Not the home page
+    //CASE: Not the home page
     else{
-      console.log(token);
       let request = {
         method: 'PUT',
         headers: {'Content-Type': 'application/json',
@@ -135,16 +135,17 @@ app.post('/', express.json(), (req, res) => {
       const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
       const serverResponse = await serverReturn.json()
     }
-   
-
   }
   async function purchaseItems(){
+    await sendMessage(agent.query, true);
+
     if(!token){
       agent.add("Please login to access the shop's features.");
+      await sendMessage("Please login to access the shop's features.", false);
       return;
    }
   agent.add('Here is your order for today.');
-  console.log(token);
+  await sendMessage('Here is your order for today.', false);
   let request = {
     method: 'PUT',
     headers: {'Content-Type': 'application/json',
@@ -162,14 +163,20 @@ app.post('/', express.json(), (req, res) => {
 
   }
 
-  function getProduct(){
+  async function getProduct(){
+    await sendMessage(agent.query, true);
+
     if(!token){
       agent.add("Please login to access the shop's features.");
+      await  sendMessage("Please login to access the shop's features.", false);
       return;
    }
+   agent.add("Say \"navigate\", if you would like to go to the $productname page or \"details\" if you would just like details here.")
+   await sendMessage("Say \"navigate\", if you would like to go to the $productname page or \"details\" if you would just like details here.", false);
   }
 
   async function getCategoryByProductId(id){
+
     //Product Detail API Call
     let request = {
       method: 'GET',
@@ -184,13 +191,14 @@ app.post('/', express.json(), (req, res) => {
     return details.category;
   }
   async function getProductAndReviews(){
+    await sendMessage(agent.query, true);
+
     //Check system is logged in
     if(!token){
       agent.add("Please login to access the shop's features.");
+      await sendMessage("Please login to access the shop's features.");
       return;
    }
-    // checkedLogin();
-    console.log("getProductReviews Called " + agent.query);
     let productname = agent.context.get('userprovidesproduct').parameters.productname;
     let id = getIdByProductName(productname);
 
@@ -222,13 +230,12 @@ app.post('/', express.json(), (req, res) => {
 
     //If user wants reviews
     if(agent.query === 'yes'){
-      console.log("yes");
       agent.add(productname +" is described as \"" + details.description + "\" for a price of $" + details.price + ". " + getReviewString(reviews));
-
+      await sendMessage(productname +" is described as \"" + details.description + "\" for a price of $" + details.price + ". " + getReviewString(reviews), false)
     }//user just wants product reviews
     else{
-      console.log("else");
       agent.add(productname +" is described as \"" + details.description + "\" for a price of $" + details.price + ".");
+      await sendMessage(productname +" is described as \"" + details.description + "\" for a price of $" + details.price + ".", false);
     }
   }
 
@@ -254,14 +261,21 @@ app.post('/', express.json(), (req, res) => {
   }
 
   async function userProvidesAddProductQuantity(){
-    console.log("userProvidesAddProductQuantity called");
-
-    let productname = agent.context.get('userprovidesproduct').parameters.productname;
-    let id = getIdByProductName(productname);
-    let quantity =  agent.context.get('userprovidesproduct').parameters.quantity;
-
+    // console.log("USER PROVIDES CALLED");
+    await sendMessage(agent.query, true);
+    if(!agent.context.get('confirmaddtocart').parameters.quantity){
+      agent.add("Please provide a quantity to add.");
+      await sendMessage("Please provide a quantity to add.", false)
+    }
+    else{
+      var quantity =  agent.context.get('confirmaddtocart').parameters.quantity;
+    }
+    let productname = agent.context.get('confirmaddtocart').parameters.productname;
+    let id = await getIdByProductName(productname);
+    // console.log(quantity + " " + productname);
     if(quantity < 1){
       agent.add("Invalid quantity");
+      await sendMessage("Invalid quantity", false)
       return;
     }
     for(let i = 0; i< quantity;  i++){
@@ -273,10 +287,10 @@ app.post('/', express.json(), (req, res) => {
   
       const serverReturn = await fetch(ENDPOINT_URL + '/application/products/' + id,request)
       const serverResponse = await serverReturn.json()
-      console.log(serverResponse);
     }
    
     agent.add("Added " + quantity + " of " + productname + " to your cart.");
+    await sendMessage("Added " + quantity + " of " + productname + " to your cart.", false)
   }
   // async function removeProductFromCart(){
   //   console.log("removeProductFromCart called");
@@ -296,13 +310,21 @@ app.post('/', express.json(), (req, res) => {
   // }
   
   async function userProvidesRemoveProductQuantity(){
+    await sendMessage(agent.query, true);
 
-    let productname = agent.context.get('userprovidesproduct').parameters.productname;
-    let id = getIdByProductName(productname);
-    let quantity =  agent.context.get('userprovidesproduct').parameters.quantity;
+    if(!agent.context.get('confirmremovefromcart').parameters.quantity){
+      agent.add("Please provide a quantity to delete.");
+      await sendMessage("Please provide a quantity to delete.", false)
+    }
+    else{
+      var quantity =  agent.context.get('confirmremovefromcart').parameters.quantity;
+    }
+    let productname = agent.context.get('confirmremovefromcart').parameters.productname;
+    let id = await getIdByProductName(productname);
 
     if(quantity < 1){
       agent.add("Invalid quantity");
+      await sendMessage("Invalid quantity", false)
       return;
     }
     var i;
@@ -315,12 +337,15 @@ app.post('/', express.json(), (req, res) => {
   
       const serverReturn = await fetch(ENDPOINT_URL + '/application/products/' + id,request)
       const serverResponse = await serverReturn.json()
-      console.log(serverResponse);
+      // console.log(serverResponse);
     }
    
-    agent.add("Deleted " + i + " of " + productname + " to your cart.");
+    agent.add("Deleted " + i + " of " + productname + " from your cart.");
+    await sendMessage("Deleted " + i + " of " + productname + " from your cart.", false);
+
   }
   async function clearCartYes(){
+    await sendMessage("Yes", true);
     let request = {
       method: 'DELETE',
       headers: {'Content-Type': 'application/json',
@@ -331,9 +356,10 @@ app.post('/', express.json(), (req, res) => {
     const serverResponse = await serverReturn.json()
 
     agent.add("Cleared all items out of cart")
+    await ssendMessage("Cleared all items out of cart", false);
   }
    async function infoAboutCart(){
-    console.log("infoAboutCart called");
+    await sendMessage(agent.query, true);
     let request = {
       method: 'GET',
       headers: {'Content-Type': 'application/json',
@@ -347,31 +373,25 @@ app.post('/', express.json(), (req, res) => {
     {"category": "plushes", "quantity": 0}, {"category": "hats", "quantity": 0}];
     const serverReturn = await fetch(ENDPOINT_URL + '/application/products/', request)
     const serverResponse = await serverReturn.json()
-    // console.log(serverResponse);
 
     var arr = Object.values(serverResponse)[0];
 
     for (var key in arr) {
-      console.log("looping");
       if (arr.hasOwnProperty(key)) {  
         totalCost+=(arr[key].price*arr[key].count);
         numItems+=arr[key].count;
         for(let i = 0; i<5; i++){
           if(types[i].category === arr[key].category){
-            console.log("if")
             types[i].quantity+=arr[key].count;
-          }
-          else{
-            console.log(types[i].category + ' ' + arr[key].category)
           }
         }
       }
    } 
-   console.log(types[3].quantity);
+  //  console.log(types[3].quantity);
 
 
     agent.add("Your cart has " + numItems + " items for a total of $" + totalCost + ". Additionally, " + parseCategoriesFromCartString(types));
-
+   await sendMessage("Your cart has " + numItems + " items for a total of $" + totalCost + ". Additionally, " + parseCategoriesFromCartString(types), false);
   }
 
   function parseCategoriesFromCartString(types){
@@ -387,29 +407,30 @@ app.post('/', express.json(), (req, res) => {
   }
 
   //Required methods
-  async function getProductByCategory(){
-      //Check system is logged in
-      if(!token){
-        agent.add("Please login to access the shop's features.");
-        return;
-     }
-    let request = {
-      method: 'GET',
-      headers: {'Content-Type': 'application/json',
-                'x-access-token': token},
-      redirect: 'follow'
-    }
+  // async function getProductByCategory(){
+  //     //Check system is logged in
+  //     if(!token){
+  //       agent.add("Please login to access the shop's features.");
+  //       return;
+  //    }
+  //   let request = {
+  //     method: 'GET',
+  //     headers: {'Content-Type': 'application/json',
+  //               'x-access-token': token},
+  //     redirect: 'follow'
+  //   }
   
-    const serverReturn = await fetch(ENDPOINT_URL + '/products',request)
-    const serverResponse = await serverReturn.json()
-    data = serverResponse;
-    console.log(data);
-  }
+  //   const serverReturn = await fetch(ENDPOINT_URL + '/products',request)
+  //   const serverResponse = await serverReturn.json()
+  //   data = serverResponse;
+  // }
 
   async function getCategories(){
-  //Check system is logged in
-  if(!token){
+  await sendMessage(agent.query, true);
+
+  if(!token){  //Check system is logged in
     agent.add("Please login to access the shop's features.");
+    await sendMessage("Please login to access the shop's features.", false)
     return;
  }
     let request = {
@@ -422,43 +443,43 @@ app.post('/', express.json(), (req, res) => {
     const serverReturn = await fetch(ENDPOINT_URL + '/categories',request)
     const serverResponse = await serverReturn.json()
     data = serverResponse;
-    console.log(data);
-    // fetch()
+
     agent.add("Here are the categories that we have: " + data.categories);
+    await sendMessage("Here are the categories that we have: " + data.categories, false)
+
   }
   async function filterByTags(){
-    console.log("filterByTags called");
-
-    console.log(agent.parameters.tagDescriptors);
-    console.log(agent.parameters.tagDescriptors.length);
-
+    await sendMessage(agent.query, true);
     //POST to application tags
     for(let i = 0; i<agent.parameters.tagDescriptors.length; i++){
-      console.log("looping");
 
       let request = {
         method: 'POST',
         headers: {'Content-Type': 'application/json',
                   'x-access-token': token},    
       }
-    
-      console.log(agent.parameters.tagDescriptors[i]);
       await fetch(ENDPOINT_URL + '/application/tags/' + agent.parameters.tagDescriptors[i],request).catch(error => agent.add("Not a valid tag. Please try another one"));
 
       agent.add("Items filtered by given tags.")
-      // var  serverResponse = await serverReturn.json();
-      // console.log(serverResponse);
-
+      await sendMessage("Items filtered by given tags.", false)
     }
   
   }
   async function getCategoryTags(){
-      //Check system is logged in
-      if(!token){
+      await sendMessage(agent.query, true);
+    //   console.log("GetCATEGORYTAGS CALLED")
+    //   console.log(agent.parameters);
+    // console.log(!agent.parameters.clothingcategory );
+      if(!token){//Check system is logged in
         agent.add("Please login to access the shop's features.");
+        await sendMessage("Please login to access the shop's features.", false);
         return;
      }
-    console.log("getCategoryTags");
+     if(!agent.parameters.clothingcategory){
+      agent.add("What category would you like tags for?");
+      await sendMessage("What category would you like tags for?", false);
+      return;
+     }
     let request = {
       method: 'GET',
       headers: {'Content-Type': 'application/json',
@@ -469,20 +490,17 @@ app.post('/', express.json(), (req, res) => {
     const serverReturn = await fetch(ENDPOINT_URL + '/categories/'+agent.parameters.clothingcategory + '/tags/',request)
     const serverResponse = await serverReturn.json()
     data = serverResponse;
-    console.log(data.tags);
-    // fetch()
     agent.add("Here are the tags: " + data.tags + " for " + agent.parameters.clothingcategory);
+    await sendMessage("Here are the tags: " + data.tags + " for " + agent.parameters.clothingcategory, false);
+
   }
 
   async function userProvidesProductMedium(){
-    console.log("userProvidesProductMedium");
+    await sendMessage(agent.query, true);
     if(agent.query === 'navigate'){
       let productname = agent.context.get('userprovidesproduct').parameters.productname;
       let id = await getIdByProductName(productname);
-      console.log(id);
       let category = await getCategoryByProductId(id);
-      console.log(category);
-  console.log("/titus/" + category + "/products/" + id);
       let request = {
         method: 'PUT',
         headers: {'Content-Type': 'application/json',
@@ -498,10 +516,13 @@ app.post('/', express.json(), (req, res) => {
       const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
       const serverResponse = await serverReturn.json()
       agent.add("Navigating to the page for " + productname);
+      await sendMessage("Navigating to the page for " + productname, false);
     }
     else{
       
       agent.add("Would you like reviews for this product as well?")
+      await sendMessage("Would you like reviews for this product as well?", false);
+
       agent.context.set({
         'name': 'detailsaboutproduct',
         'lifespan': 5,
@@ -510,6 +531,7 @@ app.post('/', express.json(), (req, res) => {
   }
   async function userProvidesCartMedium(){
     console.log("userProvidesCartMedium");
+    await sendMessage(agent.query, true);
     if(agent.query === 'navigate'){
       console.log("if");
       let request = {
@@ -527,6 +549,7 @@ app.post('/', express.json(), (req, res) => {
       const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
       const serverResponse = await serverReturn.json()
       agent.add("Navigating to your cart");
+      await sendMessage("Navigating to your cart", false);
     }
     else{
       console.log("else");
@@ -534,12 +557,14 @@ app.post('/', express.json(), (req, res) => {
       await infoAboutCart();
     }
   }
+  async function login(){
+    await sendMessage(agent.query, true);
+    await sendMessage("Okay, what is your username? State \"It is... <username>\"", false);
+  }
   //LOGIN FUNCTIONS
   function gotUsername(){
     console.log("gotUsername Called");
-
     username = agent.parameters.username;
-    console.log(username)
   }
   async function gotPassword(){
     console.log("gotPassword Called");
@@ -551,13 +576,71 @@ app.post('/', express.json(), (req, res) => {
     else{
       agent.add("Log in success!");
     }
+    
+    //CLEAR ALL MESSAGEs
+    let request = {
+      method: 'DELETE',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token}    }
+  
+    const serverReturn = await fetch(ENDPOINT_URL + '/application/messages',request);
+    console.log(serverReturn);
 
+    //Get all products
     getAllProducts();
   }
+  async function clearCart(){
+    await sendMessage(agent.query, true);
 
-  let intentMap = new Map()
+    agent.add("Are you absolutely sure you want to clear all your items in your cart?");
+    await sendMessage("Are you absolutely sure you want to clear all your items in your cart?", false);
+  }
+  async function clearCartNo(){
+    await sendMessage(agent.query, true);
+    agent.add("Okay, I will not clear the items out of cart.");
+    await sendMessage("Okay, I will not clear the items out of cart.", false)
+  }
+  async function addProductToCart(){
+    await sendMessage(agent.query, true);
+    // if(!agent.parameters.clothingcategory){
+      agent.add("Are you sure you would like to add " + agent.parameters.productname + " to your cart?");
+      await sendMessage("Are you sure you would like to add " + agent.parameters.productname + " to your cart?", false);
+      return;
+    //  }
+  }
+  async function confirmAddProductToCart(){
+    await sendMessage(agent.query, true);
+    product = agent.context.get('confirmaddtocart').parameters.productname;
+    agent.add("How many of " + product + " would you like to add to your cart?");
+    await sendMessage("How many of " + product + " would you like to add to your cart?", false);
+  }
+  async function reviewCart(){
+    await sendMessage(agent.query, true);
+    agent.add("Say \"navigate\", if you would like to go to the cart page or \"details\" if you would just like details here.");
+    await sendMessage("Say \"navigate\", if you would like to go to the cart page or \"details\" if you would just like details here.", false);
+  
+  }
+  async function removeProductFromCart(){
+    await sendMessage(agent.query, true);
+    // if(!agent.parameters.clothingcategory){
+      agent.add("Are you sure you would like to remove " + agent.parameters.productname + " from your cart?");
+      await sendMessage("Are you sure you would like to remove " + agent.parameters.productname + " from your cart?", false);
+      return;
+    //  }
+  }
+  async function confirmRemoveProductFromCart(){
+    
+    await sendMessage(agent.query, true);
+
+    product = agent.context.get('confirmremovefromcart').parameters.productname;
+    // console.log(product);
+    agent.add("How many of " + product + " would you like to remove from your cart?");
+    await sendMessage("How many of " + product + " would you like to remove from your cart?", false);
+  }
+
+  let intentMap = new Map();
   intentMap.set('Default Welcome Intent', welcome)
-  intentMap.set('getProductByCategory', getProductByCategory)
+  // intentMap.set('getProductByCategory', getProductByCategory)
   intentMap.set('getCategories', getCategories)
   intentMap.set('getCategoryTags', getCategoryTags)
 
@@ -566,11 +649,21 @@ app.post('/', express.json(), (req, res) => {
   intentMap.set('navigate', navigate)
   intentMap.set('getProductReviews', getProductAndReviews)
   intentMap.set('getProduct', getProduct)
+  intentMap.set('clearCart', clearCart);
+  intentMap.set('reviewCart', reviewCart);
+
   intentMap.set('clearCartYes', clearCartYes);
+  intentMap.set('clearCartNo', clearCartNo);
+intentMap.set('Login', login);
   // intentMap.set('checkCart', infoAboutCart);
+  intentMap.set('addProductToCart', addProductToCart)
+    intentMap.set('removeProductFromCart', removeProductFromCart);
+
+  intentMap.set('confirmAddProductToCart', confirmAddProductToCart)
+  intentMap.set('confirmRemoveProductFromCart', confirmRemoveProductFromCart)
+
 
   intentMap.set('userProvidesAddProductQuantity', userProvidesAddProductQuantity)
-  // intentMap.set('removeProductFromCart', removeProductFromCart);
   intentMap.set('userProvidesRemoveProductQuantity', userProvidesRemoveProductQuantity)
   intentMap.set('purchaseItems', purchaseItems)
   intentMap.set('userProvidesProductMedium', userProvidesProductMedium)
