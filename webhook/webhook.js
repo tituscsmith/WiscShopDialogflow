@@ -40,11 +40,11 @@ app.get('/', (req, res) => res.send('online'))
 app.post('/', express.json(), (req, res) => {
   const agent = new WebhookClient({ request: req, response: res })
   function welcome () {
-    agent.add('Webhook works!')
-    // console.log(ENDPOINT_URL)
+    agent.add('Hello! Web hook is connected.')
+    console.log(ENDPOINT_URL)
   }
   
-  //getter functions for all products, called in when login occurs
+  //Getter functions for all products, called when login occurs
   async function getAllProducts(){
     console.log("calling getAllproducts");
     let request = {
@@ -58,7 +58,7 @@ app.post('/', express.json(), (req, res) => {
     const serverResponse = await serverReturn.json()
     products = serverResponse;
   }
-
+//Not an intent handler, function used by other handlers
   function getIdByProductName(name){
     var arr = Object.values(products)[0];
     for (var key in arr) {
@@ -87,63 +87,16 @@ app.post('/', express.json(), (req, res) => {
     const serverResponse = await serverReturn.json()
   }
 
-  // async function navigate(){
-  //   await sendMessage(agent.query, true);
-
-  //   //Check system is logged in
-  //     if(!token){
-  //       agent.add("Please login to access the shop's features.");
-  //       await sendMessage("Please login to access the shop's features.", false);
-  //       return;
-  //    }
-  //   page =  agent.parameters.page;
-  //   agent.add('Going to ' + page+ ' page.');
-  //   await sendMessage('Going to ' + page+ ' page.', false);
-
-  //   //CASE: Go to home page
-  //   if(page === 'home' ){
-  //     let request = {
-  //       method: 'PUT',
-  //       headers: {'Content-Type': 'application/json',
-  //                 'x-access-token': token}, 
-  //                 'body': JSON.stringify({
-  //                   "back": false,
-  //                 "dialogflowUpdated": true,
-  //                 "page": "/titus"
-  //                 }),      
-  //     }
-    
-  
-  //     const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
-  //     const serverResponse = await serverReturn.json()
-  //   }
-
-  //   //CASE: Not the home page
-  //   else{
-  //     let request = {
-  //       method: 'PUT',
-  //       headers: {'Content-Type': 'application/json',
-  //                 'x-access-token': token}, 
-  //                 'body': JSON.stringify({
-  //                   "back": false,
-  //                 "dialogflowUpdated": true,
-  //                 "page": "/titus/" + page
-  //                 }),      
-  //     }
-    
-  
-  //     const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
-  //     const serverResponse = await serverReturn.json()
-  //   }
-  // }
   async function purchaseItems(){
     await sendMessage(agent.query, true);
 
-    if(!token){
-      agent.add("Please login to access the shop's features.");
-      await sendMessage("Please login to access the shop's features.", false);
-      return;
-   }
+   //Confirm user is logged in
+   if(!token){
+    agent.add("Hello, please login to access the shop's features.");
+    await sendMessage("Hello, please login to access the shop's features.", false)
+    return;
+ }
+
   agent.add('Here is your order for today.');
   await sendMessage('Here is your order for today.', false);
   let request = {
@@ -161,25 +114,124 @@ app.post('/', express.json(), (req, res) => {
   const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
   const serverResponse = await serverReturn.json()
 
-  }
+  }//Not required for assignment
+  // async function getProductByCategory(){
+  //     //Check system is logged in
+  //     if(!token){
+  //       agent.add("Please login to access the shop's features.");
+  //       return;
+  //    }
+  //   let request = {
+  //     method: 'GET',
+  //     headers: {'Content-Type': 'application/json',
+  //               'x-access-token': token},
+  //     redirect: 'follow'
+  //   }
+  
+  //   const serverReturn = await fetch(ENDPOINT_URL + '/products',request)
+  //   const serverResponse = await serverReturn.json()
+  //   data = serverResponse;
+  // }
+  async function navigate(){
+    await sendMessage(agent.query, true);
 
+      //Check system is logged in
+      if(!token){
+        agent.add("Please login to access the shop's features.");
+        await sendMessage("Please login to access the shop's features.", false);
+        return;
+     }
+
+    agent.add("Please confirm that you would like to go to " + agent.parameters.pages + " page.");
+    await sendMessage("Please confirm that you would like to go to " + agent.parameters.pages + " page.", false);
+  }
+  async function rejectNavigate(){
+    await sendMessage(agent.query, true);
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
+    agent.add("Okay, I won't navigate to that page. I can navigate to category, product, home, and cart pages. What page would you like to go to?");
+    await sendMessage("Okay, I won't navigate to that page. I can navigate to category, product, home, and cart pages. What page would you like to go to?", false);
+  }
+   async function confirmNavigate(){
+    await sendMessage(agent.query, true);
+    // console.log( agent.context.get('userprovidesdestination'));
+    //Check system is logged in
+      if(!token){
+        agent.add("Please login to access the shop's features.");
+        await sendMessage("Please login to access the shop's features.", false);
+        return;
+     }
+      //Check system is logged in
+      if(!agent.context.get('userprovidesdestination').parameters.pages){
+        agent.add("Please specify what page you would like to go to.");
+        await sendMessage("Please login to access the shop's features.", false);
+        return;
+     }
+    page =  agent.context.get('userprovidesdestination').parameters.pages;
+    agent.add('Going to ' + page+ ' page.');
+    await sendMessage('Going to ' + page+ ' page.', false);
+
+    //CASE: Go to home page
+    if(page === 'home' ){
+      let request = {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token}, 
+                  'body': JSON.stringify({
+                    "back": false,
+                  "dialogflowUpdated": true,
+                  "page": "/titus"
+                  }),      
+      }
+    
+  
+      const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+      const serverResponse = await serverReturn.json()
+    }
+
+    //CASE: Not the home page
+    else{
+      let request = {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json',
+                  'x-access-token': token}, 
+                  'body': JSON.stringify({
+                    "back": false,
+                  "dialogflowUpdated": true,
+                  "page": "/titus/" + page
+                  }),      
+      }
+    
+  
+      const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
+      const serverResponse = await serverReturn.json()
+    }
+  }
   async function getProduct(){
     await sendMessage(agent.query, true);
 
     if(!token){
-      agent.add("Please login to access the shop's features.");
-      await  sendMessage("Please login to access the shop's features.", false);
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
       return;
    }
    if(!agent.parameters.productname){
     agent.add("Please provide a product name to add.");
     await sendMessage("Please provide a product name to add.", false)
+    return;
   }
 
    agent.add("Say \"navigate\", if you would like to go to the " +  agent.parameters.productname + " page or \"details\" if you would just like details here.")
    await sendMessage("Say \"navigate\", if you would like to go to the" +  agent.parameters.productname + " page or \"details\" if you would just like details here.", false);
   }
 
+  //Not an intent handler, used by other functions to get category for a given id
   async function getCategoryByProductId(id){
 
     //Product Detail API Call
@@ -200,8 +252,8 @@ app.post('/', express.json(), (req, res) => {
 
     //Check system is logged in
     if(!token){
-      agent.add("Please login to access the shop's features.");
-      await sendMessage("Please login to access the shop's features.");
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
       return;
    }
     let productname = agent.context.get('userprovidesproduct').parameters.productname;
@@ -271,6 +323,7 @@ app.post('/', express.json(), (req, res) => {
     if(!agent.context.get('confirmaddtocart').parameters.quantity){
       agent.add("Please provide a quantity to add.");
       await sendMessage("Please provide a quantity to add.", false)
+      return;
     }
     else{
       var quantity =  agent.context.get('confirmaddtocart').parameters.quantity;
@@ -320,6 +373,7 @@ app.post('/', express.json(), (req, res) => {
     if(!agent.context.get('confirmremovefromcart').parameters.quantity){
       agent.add("Please provide a quantity to delete.");
       await sendMessage("Please provide a quantity to delete.", false)
+      return;
     }
     else{
       var quantity =  agent.context.get('confirmremovefromcart').parameters.quantity;
@@ -351,6 +405,13 @@ app.post('/', express.json(), (req, res) => {
   }
   async function clearCartYes(){
     await sendMessage("Yes", true);
+    //Confirm user is logged in
+    if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+    
     let request = {
       method: 'DELETE',
       headers: {'Content-Type': 'application/json',
@@ -363,6 +424,7 @@ app.post('/', express.json(), (req, res) => {
     agent.add("Cleared all items out of cart")
     await ssendMessage("Cleared all items out of cart", false);
   }
+  //Not an intent handler, called by reviewCart
    async function infoAboutCart(){
     await sendMessage(agent.query, true);
     let request = {
@@ -399,6 +461,8 @@ app.post('/', express.json(), (req, res) => {
    await sendMessage("Your cart has " + numItems + " items for a total of $" + totalCost + ". Additionally, " + parseCategoriesFromCartString(types), false);
   }
 
+  //This function formats/creates a string to let user know 
+  //how many of each category they have in their cart.
   function parseCategoriesFromCartString(types){
     let messageString = '';
     messageString+= 'You have ' + types[0].quantity + " tees, ";
@@ -406,36 +470,16 @@ app.post('/', express.json(), (req, res) => {
     messageString+= '' + types[2].quantity+ " bottoms, ";
     messageString+= '' + types[1].quantity + " leggings, ";
     messageString+= '' + types[5].quantity + " hats, ";
-
     messageString+= ' and ' + types[4].quantity + " plushes.";
     return messageString;
   }
-
-  //Required methods
-  // async function getProductByCategory(){
-  //     //Check system is logged in
-  //     if(!token){
-  //       agent.add("Please login to access the shop's features.");
-  //       return;
-  //    }
-  //   let request = {
-  //     method: 'GET',
-  //     headers: {'Content-Type': 'application/json',
-  //               'x-access-token': token},
-  //     redirect: 'follow'
-  //   }
-  
-  //   const serverReturn = await fetch(ENDPOINT_URL + '/products',request)
-  //   const serverResponse = await serverReturn.json()
-  //   data = serverResponse;
-  // }
 
   async function getCategories(){
   await sendMessage(agent.query, true);
 
   if(!token){  //Check system is logged in
-    agent.add("Please login to access the shop's features.");
-    await sendMessage("Please login to access the shop's features.", false)
+    agent.add("Hello, please login to access the shop's features.");
+    await sendMessage("Hello, please login to access the shop's features.", false)
     return;
  }
     let request = {
@@ -449,44 +493,88 @@ app.post('/', express.json(), (req, res) => {
     const serverResponse = await serverReturn.json()
     data = serverResponse;
 
-    agent.add("Here are the categories that we have: " + data.categories);
-    await sendMessage("Here are the categories that we have: " + data.categories, false)
+    agent.add("Alright, here are the categories available today: " + data.categories);
+    await sendMessage("Alright, Here are the categories available today: " + data.categories, false)
 
   }
   async function filterByTags(){
     await sendMessage(agent.query, true);
-    //POST to application tags
-
-    if(!agent.parameters.tagDescriptors){
-      agent.add("What tag would you like to filter by?");
-      await sendMessage("What tag would you like to filter by?", false);
+  
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
       return;
-     }
+   }
+   if(agent.parameters.tagDescriptors.length<1){
+    agent.add("Okay " + username + ", it looks like you didn't enter a tag or the tag is invalid, what valid tag would you like to filter by?");
+    await sendMessage("Okay " + username + ", it looks like you didn't enter a tag or the tag is invalid, what valid tag would you like to filter by?", false);
+    return;
+   }
 
-    for(let i = 0; i<agent.parameters.tagDescriptors.length; i++){
+   agent.add("Please confirm that you would like to filter tags by " + agent.parameters.tagDescriptors);
+   await sendMessage("Please confirm that you would like to filter tags by " + agent.parameters.tagDescriptors, false)
 
+  }
+  async function rejectFilterByTags(){
+    await sendMessage(agent.query, true);
+  
+    //Confirm user is logged in
+    if(!token){
+     agent.add("Hello, please login to access the shop's features.");
+     await sendMessage("Hello, please login to access the shop's features.", false)
+     return;
+    }
+    
+    agent.add("Okay, I won't filter by tags. What else can I do for you?");
+    await sendMessage("Okay, I won't filter by tags. What else can I do for you?", false);
+
+  }
+  async function confirmFilterByTags(){
+    await sendMessage(agent.query, true);
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+   //Clear tags first
+   let request = {
+    method: 'DELETE',
+    headers: {'Content-Type': 'application/json',
+              'x-access-token': token},    
+  }
+  await fetch(ENDPOINT_URL + '/application/tags/', request).catch(error => agent.add("Unable to clear tags"));
+
+    //Now, POST to application tags
+    for(let i = 0; i<agent.context.get('userprovidestag').parameters.tagDescriptors.length; i++){
       let request = {
         method: 'POST',
         headers: {'Content-Type': 'application/json',
                   'x-access-token': token},    
       }
-      await fetch(ENDPOINT_URL + '/application/tags/' + agent.parameters.tagDescriptors[i],request).catch(error => agent.add("Not a valid tag. Please try another one"));
-
-      agent.add("Items filtered by given tags.")
-      await sendMessage("Items filtered by given tags.", false)
+      await fetch(ENDPOINT_URL + '/application/tags/' + agent.context.get('userprovidestag').parameters.tagDescriptors[i],request).catch(error => tagErrorStatement());
     }
+
+    agent.add("Okay, I am filtering items by given tags. If you don't see anything you'd like, try another tag.")
+    await sendMessage("Okay, I am filtering items by given tags. If you don't see anything you'd like, try another tag.", false)
   
+  }
+
+  //Error statement for tag functions. Rarely gets called because of Dialogflow matching
+  async function tagErrorStatement(){
+    await sendMessage("Not a valid tag. Please try another one", false);
+    agent.add("Not a valid tag. Please try another one")
   }
   async function getCategoryTags(){
       await sendMessage(agent.query, true);
-    //   console.log("GetCATEGORYTAGS CALLED")
-    //   console.log(agent.parameters);
-    // console.log(!agent.parameters.clothingcategory );
       if(!token){//Check system is logged in
-        agent.add("Please login to access the shop's features.");
-        await sendMessage("Please login to access the shop's features.", false);
+        agent.add("Hello, please login to access the shop's features.");
+        await sendMessage("Hello, please login to access the shop's features.", false)
         return;
      }
+     //Prompt for category if missing
      if(!agent.parameters.clothingcategory){
       agent.add("What category would you like tags for?");
       await sendMessage("What category would you like tags for?", false);
@@ -502,13 +590,20 @@ app.post('/', express.json(), (req, res) => {
     const serverReturn = await fetch(ENDPOINT_URL + '/categories/'+agent.parameters.clothingcategory + '/tags/',request)
     const serverResponse = await serverReturn.json()
     data = serverResponse;
-    agent.add("Here are the tags: " + data.tags + " for " + agent.parameters.clothingcategory);
-    await sendMessage("Here are the tags: " + data.tags + " for " + agent.parameters.clothingcategory, false);
-
+    agent.add("Okay " + username + ", Here are the tags: " + data.tags + " for " + agent.parameters.clothingcategory);
+    await sendMessage("Okay " + username + ", Here are the tags: " + data.tags + " for " + agent.parameters.clothingcategory, false);
   }
 
   async function userProvidesProductMedium(){
     await sendMessage(agent.query, true);
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
     if(agent.query === 'navigate'){
       let productname = agent.context.get('userprovidesproduct').parameters.productname;
       let id = await getIdByProductName(productname);
@@ -523,17 +618,16 @@ app.post('/', express.json(), (req, res) => {
                   "page": "/titus/" + category + "/products/" + id
                   }),      
       }
-    
   
       const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
       const serverResponse = await serverReturn.json()
-      agent.add("Navigating to the page for " + productname);
-      await sendMessage("Navigating to the page for " + productname, false);
+      agent.add("Okay, navigating to the page for " + productname);
+      await sendMessage("Okay, navigating to the page for " + productname, false);
     }
-    else{
+    else{//Ask for reviews
       
-      agent.add("Would you like reviews for this product as well?")
-      await sendMessage("Would you like reviews for this product as well?", false);
+      agent.add("Alright, would you like reviews for this product as well?")
+      await sendMessage("Alright, would you like reviews for this product as well?", false);
 
       agent.context.set({
         'name': 'detailsaboutproduct',
@@ -542,8 +636,15 @@ app.post('/', express.json(), (req, res) => {
     }
   }
   async function userProvidesCartMedium(){
-    console.log("userProvidesCartMedium");
     await sendMessage(agent.query, true);
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
     if(agent.query === 'navigate'){
       let request = {
         method: 'PUT',
@@ -555,16 +656,13 @@ app.post('/', express.json(), (req, res) => {
                   "page": "/titus/cart"
                   }),      
       }
-    
   
       const serverReturn = await fetch(ENDPOINT_URL + '/application',request)
       const serverResponse = await serverReturn.json()
-      agent.add("Navigating to your cart");
-      await sendMessage("Navigating to your cart", false);
+      agent.add("Okay " + username + ", I am navigating to your cart");
+      await sendMessage("Okay " + username + ", I am navigating to your cart", false);
     }
-    else{
-      console.log("else");
-      
+    else{//Get details about cart      
       await infoAboutCart();
     }
   }
@@ -575,23 +673,21 @@ app.post('/', express.json(), (req, res) => {
   }
   //LOGIN FUNCTIONS
   function gotUsername(){
-    console.log("gotUsername Called");
     username = agent.parameters.username;
     agent.add("Okay, what is your password? State \"It is... <password>\"");
 
   }
   async function gotPassword(){
-    console.log("gotPassword Called");
     password = agent.parameters.password;
     let token = await getToken();
     if(token === undefined){
-      agent.add("Log in failed.")
+      agent.add("Log in failed. Please check your username & password and try again.")
     }
     else{
-      agent.add("Log in success!");
+      agent.add("Log in success. What can I do for you today?");
     }
     
-    //CLEAR ALL MESSAGEs
+    //Clear all messages in text box
     let request = {
       method: 'DELETE',
       headers: {'Content-Type': 'application/json',
@@ -603,115 +699,167 @@ app.post('/', express.json(), (req, res) => {
     //Get all products
     getAllProducts();
   }
-  // async function(){
-  //   await sendMessage(agent.query, true);
 
-  // }
   async function clearCart(){
     await sendMessage(agent.query, true);
+
+    //Confirm user is logged in
+    if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
 
     agent.add("Are you absolutely sure you want to clear all your items in your cart?");
     await sendMessage("Are you absolutely sure you want to clear all your items in your cart?", false);
   }
   async function clearCartNo(){
     await sendMessage(agent.query, true);
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
     agent.add("Okay, I will not clear the items out of cart.");
     await sendMessage("Okay, I will not clear the items out of cart.", false)
   }
   async function addProductToCart(){
     await sendMessage(agent.query, true);
-    // if(!agent.parameters.clothingcategory){
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
       agent.add("Are you sure you would like to add " + agent.parameters.productname + " to your cart?");
       await sendMessage("Are you sure you would like to add " + agent.parameters.productname + " to your cart?", false);
       return;
-    //  }
   }
   async function confirmAddProductToCart(){
     await sendMessage(agent.query, true);
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
     product = agent.context.get('confirmaddtocart').parameters.productname;
     agent.add("How many of " + product + " would you like to add to your cart?");
     await sendMessage("How many of " + product + " would you like to add to your cart?", false);
   }
   async function reviewCart(){
     await sendMessage(agent.query, true);
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
     agent.add("Say \"navigate\", if you would like to go to the cart page or \"details\" if you would just like details here.");
     await sendMessage("Say \"navigate\", if you would like to go to the cart page or \"details\" if you would just like details here.", false);
   
   }
+
+  //Functions to confirm or remove from cart and provide quantity
   async function removeProductFromCart(){
     await sendMessage(agent.query, true);
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
       agent.add("Are you sure you would like to remove " + agent.parameters.productname + " from your cart?");
       await sendMessage("Are you sure you would like to remove " + agent.parameters.productname + " from your cart?", false);
       return;
   }
   async function rejectAddProductToCart(){
     await sendMessage(agent.query, true);
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
     agent.add("Okay, I won't add that item. What else can I do for you?");
     await sendMessage("Okay, I won't add that item. What else can I do for you?", false);
   }
   async function confirmRemoveProductFromCart(){
-    
     await sendMessage(agent.query, true);
 
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
     product = agent.context.get('confirmremovefromcart').parameters.productname;
-    // console.log(product);
     agent.add("How many of " + product + " would you like to remove from your cart?");
     await sendMessage("How many of " + product + " would you like to remove from your cart?", false);
   }
   async function rejectRemoveProductFromCart(){
     await sendMessage(agent.query, true);
+
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+
     agent.add("Okay, I won't remove that item. What else can I do for you?");
     await sendMessage("Okay, I won't remove that item. What else can I do for you?", false);
   }
-
-
+  //Map intent handlers
   let intentMap = new Map();
+
   intentMap.set('Default Welcome Intent', welcome)
-  // intentMap.set('getProductByCategory', getProductByCategory)
   intentMap.set('getCategories', getCategories)
   intentMap.set('getCategoryTags', getCategoryTags)
-
   intentMap.set('UserProvidesUsername', gotUsername)
   intentMap.set('userProvidesPassword', gotPassword)
-  // intentMap.set('navigate', navigate)
   intentMap.set('getProductReviews', getProductAndReviews)
   intentMap.set('getProduct', getProduct)
   intentMap.set('clearCart', clearCart);
   intentMap.set('reviewCart', reviewCart);
-
   intentMap.set('clearCartYes', clearCartYes);
   intentMap.set('clearCartNo', clearCartNo);
 intentMap.set('Login', login);
-  // intentMap.set('checkCart', infoAboutCart);
+intentMap.set('navigate', navigate);
+intentMap.set('confirmNavigate', confirmNavigate);
+intentMap.set('rejectNavigate', rejectNavigate);
+
+
   intentMap.set('addProductToCart', addProductToCart)
     intentMap.set('removeProductFromCart', removeProductFromCart);
     intentMap.set('rejectAddProductToCart', rejectAddProductToCart);
     intentMap.set('rejectRemoveProductFromCart', rejectRemoveProductFromCart);
-
   intentMap.set('confirmAddProductToCart', confirmAddProductToCart)
   intentMap.set('confirmRemoveProductFromCart', confirmRemoveProductFromCart)
-
-
   intentMap.set('userProvidesAddProductQuantity', userProvidesAddProductQuantity)
   intentMap.set('userProvidesRemoveProductQuantity', userProvidesRemoveProductQuantity)
   intentMap.set('purchaseItems', purchaseItems)
   intentMap.set('userProvidesProductMedium', userProvidesProductMedium)
   intentMap.set('userProvidesCartMedium', userProvidesCartMedium)
+  intentMap.set('rejectFilterByTag', rejectFilterByTags)
+  intentMap.set('confirmFilterByTag', confirmFilterByTags)
 
   intentMap.set('filterByTag', filterByTags)
 
-
-
-
-
-
-  // intentMap.set('Login', login)
-
-
-
-  
-  // You will need to declare this `Login` content in DialogFlow to make this work
-  // intentMap.set('Login', login) 
   agent.handleRequest(intentMap)
 })
 
