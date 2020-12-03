@@ -590,8 +590,8 @@ app.post('/', express.json(), (req, res) => {
     const serverReturn = await fetch(ENDPOINT_URL + '/categories/'+agent.parameters.clothingcategory + '/tags/',request)
     const serverResponse = await serverReturn.json()
     data = serverResponse;
-    agent.add("Okay " + username + ", Here are the tags: " + data.tags + " for " + agent.parameters.clothingcategory);
-    await sendMessage("Okay " + username + ", Here are the tags: " + data.tags + " for " + agent.parameters.clothingcategory, false);
+    agent.add("Okay " + username + ", Here are the tags for " + agent.parameters.clothingcategory + ": " + data.tags);
+    await sendMessage("Okay " + username + ", Here are the tags for " + agent.parameters.clothingcategory + ": " + data.tags, false);
   }
 
   async function userProvidesProductMedium(){
@@ -666,12 +666,14 @@ app.post('/', express.json(), (req, res) => {
       await infoAboutCart();
     }
   }
+
+  //LOGIN FUNCTIONS --> Can't send messages because no token
   async function login(){
-    await sendMessage(agent.query, true);
-    await sendMessage("Okay, what is your username? State \"It is... <username>\"", false);
+    // await sendMessage(agent.query, true);
+    // await sendMessage("Okay, what is your username? State \"It is... <username>\"", false);
     agent.add("Okay, what is your username? State \"It is... <username>\"");
   }
-  //LOGIN FUNCTIONS
+
   function gotUsername(){
     username = agent.parameters.username;
     agent.add("Okay, what is your password? State \"It is... <password>\"");
