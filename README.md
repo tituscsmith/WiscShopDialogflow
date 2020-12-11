@@ -1,16 +1,6 @@
-# Basic Setup
+# Sample Walkthrough of Shoppping Interaction
 
-We have elected to provide the option to fetch from a local instance of the endpoint, because a Dialogflow intent has an inflexible timeout deadline of 5 seconds, and some students may not have a 5 second latency to our online endpoint. 
-
-In index.js and webhook.js ,there are the USE_LOCAL_ENDPOINT flags, which tell the web interface and dialogflow webhook whether requests should target the online endpoint or a local instance of the endpoint. 
-
-To target the online endpoint, change the window.$USE_LOCAL_ENDPOINT flag to false in index.js and the USE_LOCAL_ENDPOINT flag to false in webhook.js
-
-To target the local endpoint, change the window.$USE_LOCAL_ENDPOINT flag to true in index.js and the USE_LOCAL_ENDPOINT flag to true in webhook.js
-
-
-
-
+[<img src="https://img.youtube.com/vi/IjzQFDMUBtU/maxresdefault.jpg" width="50%">](https://youtu.be/IjzQFDMUBtU)
 
 
 # WiscShop API
@@ -201,3 +191,9 @@ Suppose you want to change the page of the application. You can do so by updatin
 - `/<username>/cart` // Cart
 - `/<username>/cart-review` // Cart Review
 - `/<username>/cart-confirmed` // Purchase Confirmed Page
+
+
+# Basic Setup
+
+To target the online endpoint, change the window.$USE_LOCAL_ENDPOINT flag to false in index.js and the USE_LOCAL_ENDPOINT flag to false in webhook.js
+To target the local endpoint, change the window.$USE_LOCAL_ENDPOINT flag to true in index.js and the USE_LOCAL_ENDPOINT flag to true in webhook.js
