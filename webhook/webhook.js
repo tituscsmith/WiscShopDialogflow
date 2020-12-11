@@ -274,8 +274,8 @@ app.post('/', express.json(), (req, res) => {
       redirect: 'follow'
     }
   
-    var serverReturn = await fetch(ENDPOINT_URL + '/products/' + id,request)
-    var serverResponse = await serverReturn.json()
+    var serverReturn = await fetch(ENDPOINT_URL + '/products/' + id,request).catch(error => console.log(error));
+    // var serverResponse = await serverReturn.json()
     details = serverResponse;
 
     var reviews = '';
@@ -332,18 +332,18 @@ app.post('/', express.json(), (req, res) => {
       await sendMessage("Please provide a quantity to add.", false)
       return;
     }
-    else{
       var quantity =  agent.context.get('confirmaddtocart').parameters.quantity;
-    }
     let productname = agent.context.get('confirmaddtocart').parameters.productname;
     let id = await getIdByProductName(productname);
     // console.log(quantity + " " + productname);
-    if(quantity < 1){
-      agent.add("Invalid quantity");
-      await sendMessage("Invalid quantity", false)
+    if(quantity < 1 || quantity > 10){
+      agent.add("Invalid quantity. You can only buy 1-10 items at a time. Sorry!");
+      await sendMessage("Invalid quantity. You can buy remove 1-10 items at a time. Sorry!", false)
       return;
     }
+   
     for(let i = 0; i< quantity;  i++){
+      console.log(quantity);
       let request = {
         method: 'POST',
         headers: {'Content-Type': 'application/json',
@@ -351,11 +351,11 @@ app.post('/', express.json(), (req, res) => {
       }
   
       const serverReturn = await fetch(ENDPOINT_URL + '/application/products/' + id,request)
-      const serverResponse = await serverReturn.json()
+      // const serverResponse = serverReturn.json()
     }
    
-    agent.add("Added " + quantity + " of " + productname + " to your cart.");
-    await sendMessage("Added " + quantity + " of " + productname + " to your cart.", false)
+    agent.add("Adding " + quantity + " of " + productname + " to your cart.");
+    await sendMessage("Adding " + quantity + " of " + productname + " to your cart.", false)
   }
   
   async function userProvidesRemoveProductQuantity(){
@@ -366,15 +366,13 @@ app.post('/', express.json(), (req, res) => {
       await sendMessage("Please provide a quantity to delete.", false)
       return;
     }
-    else{
       var quantity =  agent.context.get('confirmremovefromcart').parameters.quantity;
-    }
     let productname = agent.context.get('confirmremovefromcart').parameters.productname;
     let id = await getIdByProductName(productname);
 
-    if(quantity < 1){
-      agent.add("Invalid quantity");
-      await sendMessage("Invalid quantity", false)
+    if(quantity < 1 || quantity > 10) {
+      agent.add("Invalid quantity. You can only remove 1-10 items at a time. Sorry!");
+      await sendMessage("Invalid quantity. You can only remove 1-10 items at a time. Sorry!", false)
       return;
     }
     var i;
@@ -386,12 +384,12 @@ app.post('/', express.json(), (req, res) => {
       }
   
       const serverReturn = await fetch(ENDPOINT_URL + '/application/products/' + id,request)
-      const serverResponse = await serverReturn.json()
+      // const serverResponse = await serverReturn.json()
       // console.log(serverResponse);
     }
    
-    agent.add("Deleted " + i + " of " + productname + " from your cart.");
-    await sendMessage("Deleted " + i + " of " + productname + " from your cart.", false);
+    agent.add("Removing " + i + " of " + productname + " from your cart.");
+    await sendMessage("Removing " + i + " of " + productname + " from your cart.", false);
 
   }
   async function clearCartYes(){
@@ -413,7 +411,7 @@ app.post('/', express.json(), (req, res) => {
     const serverResponse = await serverReturn.json()
 
     agent.add("Cleared all items out of cart")
-    await ssendMessage("Cleared all items out of cart", false);
+    await sendMessage("Cleared all items out of cart", false);
   }
   //Not an intent handler, called by reviewCart
    async function infoAboutCart(){
@@ -437,7 +435,7 @@ app.post('/', express.json(), (req, res) => {
       if (arr.hasOwnProperty(key)) {  
         totalCost+=(arr[key].price*arr[key].count);
         numItems+=arr[key].count;
-        for(let i = 0; i<5; i++){
+        for(let i = 0; i<6; i++){
           if(types[i].category === arr[key].category){
             types[i].quantity+=arr[key].count;
           }
@@ -698,7 +696,7 @@ app.post('/', express.json(), (req, res) => {
     agent.add("Please provide a product name to add.");
     await sendMessage("Please provide a product name to add.", false)
 
-    agent.setContext("awaitingProductToAdd");
+    agent.context.set("awaitingProductToAdd");
     return;
   }
   else{
@@ -719,13 +717,13 @@ app.post('/', express.json(), (req, res) => {
     agent.add("Please provide a product name to add.");
     await sendMessage("Please provide a product name to add.", false)
 
-    agent.setContext("awaitingProductToAdd");
+    agent.context.set("awaitingProductToAdd");
     return;
   }
   else{
     agent.add("Are you sure you would like to add " + agent.parameters.productname + " to your cart?");
     await sendMessage("Are you sure you would like to add " + agent.parameters.productname + " to your cart?", false);
-    agent.setContext("confirmAddProductToCart");
+    agent.context.set("confirmAddProductToCart");
     return;
   }
   }
@@ -742,13 +740,13 @@ app.post('/', express.json(), (req, res) => {
     agent.add("Please provide a product name to remove.");
     await sendMessage("Please provide a product name to remove.", false)
 
-    agent.setContext("awaitingProductToRemove");
+    agent.context.set("awaitingProductToRemove");
     return;
   }
   else{
     agent.add("Are you sure you would like to remove" + agent.parameters.productname + " to your cart?");
     await sendMessage("Are you sure you would like to remove " + agent.parameters.productname + " to your cart?", false);
-    agent.setContext("confirmRemoveProductToCart");
+    agent.context.set("confirmRemoveProductToCart");
     return;
   }
   }
@@ -764,8 +762,8 @@ app.post('/', express.json(), (req, res) => {
    }
 
     product = agent.context.get('confirmaddtocart').parameters.productname;
-    agent.add("How many of " + product + " would you like to add to your cart?");
-    await sendMessage("How many of " + product + " would you like to add to your cart?", false);
+    agent.add("How many of " + product + " would you like to add to your cart? (Max 10)");
+    await sendMessage("How many of " + product + " would you like to add to your cart? (Max 10)", false);
   }
   async function reviewCart(){
     await sendMessage(agent.query, true);
@@ -795,7 +793,7 @@ app.post('/', express.json(), (req, res) => {
    if(!agent.parameters.productname){
     agent.add("Please provide a product name to remove.");
     await sendMessage("Please provide a product name to remove.", false)
-    agent.setContext("awaitingProductToRemove");
+    agent.context.set("awaitingProductToRemove");
 
     return;
   }
@@ -830,8 +828,8 @@ app.post('/', express.json(), (req, res) => {
    }
 
     product = agent.context.get('confirmremovefromcart').parameters.productname;
-    agent.add("How many of " + product + " would you like to remove from your cart?");
-    await sendMessage("How many of " + product + " would you like to remove from your cart?", false);
+    agent.add("How many of " + product + " would you like to remove from your cart? (Max 10)");
+    await sendMessage("How many of " + product + " would you like to remove from your cart? (Max 10)", false);
   }
   async function rejectRemoveProductFromCart(){
     await sendMessage(agent.query, true);
