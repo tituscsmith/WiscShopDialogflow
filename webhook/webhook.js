@@ -357,22 +357,6 @@ app.post('/', express.json(), (req, res) => {
     agent.add("Added " + quantity + " of " + productname + " to your cart.");
     await sendMessage("Added " + quantity + " of " + productname + " to your cart.", false)
   }
-  // async function removeProductFromCart(){
-  //   console.log("removeProductFromCart called");
-  //   let product = agent.parameters.product;
-  //   id = await getIdByProductName(product);
-  //   console.log(id);
-  //   let request = {
-  //     method: 'GET',
-  //     headers: {'Content-Type': 'application/json',
-  //               'x-access-token': token}, 
-  //   }
-
-  //   const serverReturn = await fetch(ENDPOINT_URL + '/application/products/' + id,request)
-
-  //   agent.add("You have " + serverReturn.count + " of " + product + ". How many would you like to remove?");
-  //   const serverResponse = await serverReturn.json()
-  // }
   
   async function userProvidesRemoveProductQuantity(){
     await sendMessage(agent.query, true);
@@ -710,11 +694,65 @@ app.post('/', express.json(), (req, res) => {
       await sendMessage("Hello, please login to access the shop's features.", false)
       return;
    }
+   if(!agent.parameters.productname){
+    agent.add("Please provide a product name to add.");
+    await sendMessage("Please provide a product name to add.", false)
 
-      agent.add("Are you sure you would like to add " + agent.parameters.productname + " to your cart?");
-      await sendMessage("Are you sure you would like to add " + agent.parameters.productname + " to your cart?", false);
-      return;
+    agent.setContext("awaitingProductToAdd");
+    return;
   }
+  else{
+    agent.add("Are you sure you would like to add " + agent.parameters.productname + " to your cart?");
+    await sendMessage("Are you sure you would like to add " + agent.parameters.productname + " to your cart?", false);
+    return;
+  }
+  }
+  async function awaitingProductToAdd(){
+    await sendMessage(agent.query, true);
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+   if(!agent.parameters.productname){
+    agent.add("Please provide a product name to add.");
+    await sendMessage("Please provide a product name to add.", false)
+
+    agent.setContext("awaitingProductToAdd");
+    return;
+  }
+  else{
+    agent.add("Are you sure you would like to add " + agent.parameters.productname + " to your cart?");
+    await sendMessage("Are you sure you would like to add " + agent.parameters.productname + " to your cart?", false);
+    agent.setContext("confirmAddProductToCart");
+    return;
+  }
+  }
+
+  async function awaitingProductToRemove(){
+    await sendMessage(agent.query, true);
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+   if(!agent.parameters.productname){
+    agent.add("Please provide a product name to remove.");
+    await sendMessage("Please provide a product name to remove.", false)
+
+    agent.setContext("awaitingProductToRemove");
+    return;
+  }
+  else{
+    agent.add("Are you sure you would like to remove" + agent.parameters.productname + " to your cart?");
+    await sendMessage("Are you sure you would like to remove " + agent.parameters.productname + " to your cart?", false);
+    agent.setContext("confirmRemoveProductToCart");
+    return;
+  }
+  }
+
   async function confirmAddProductToCart(){
     await sendMessage(agent.query, true);
 
@@ -754,9 +792,18 @@ app.post('/', express.json(), (req, res) => {
       await sendMessage("Hello, please login to access the shop's features.", false)
       return;
    }
+   if(!agent.parameters.productname){
+    agent.add("Please provide a product name to remove.");
+    await sendMessage("Please provide a product name to remove.", false)
+    agent.setContext("awaitingProductToRemove");
 
-      agent.add("Are you sure you would like to remove " + agent.parameters.productname + " from your cart?");
-      await sendMessage("Are you sure you would like to remove " + agent.parameters.productname + " from your cart?", false);
+    return;
+  }
+  else{
+    agent.add("Are you sure you would like to remove " + agent.parameters.productname + " from your cart?");
+    await sendMessage("Are you sure you would like to remove " + agent.parameters.productname + " from your cart?", false);
+  } 
+
       return;
   }
   async function rejectAddProductToCart(){
@@ -866,6 +913,9 @@ intentMap.set('rejectNavigate', rejectNavigate);
 
 
   intentMap.set('addProductToCart', addProductToCart)
+  intentMap.set('awaitingProductToAdd', awaitingProductToAdd);
+  intentMap.set('awaitingProductToRemove', awaitingProductToRemove);
+
     intentMap.set('removeProductFromCart', removeProductFromCart);
     intentMap.set('rejectAddProductToCart', rejectAddProductToCart);
     intentMap.set('rejectRemoveProductFromCart', rejectRemoveProductFromCart);
