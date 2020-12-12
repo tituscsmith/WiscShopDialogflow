@@ -1,4 +1,4 @@
-# Sample Walkthrough of Shoppping Interaction
+# Sample Walkthrough of Shopping Interaction
 
 [<img src="https://img.youtube.com/vi/dKGi7tLjiSU/maxresdefault.jpg" width="75%">](https://youtu.be/dKGi7tLjiSU)
 
