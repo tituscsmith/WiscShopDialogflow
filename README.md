@@ -1,6 +1,6 @@
 # Sample Walkthrough of Shoppping Interaction
 
-[<img src="https://img.youtube.com/vi/IjzQFDMUBtU/maxresdefault.jpg" width="50%">](https://youtu.be/IjzQFDMUBtU)
+[<img src="https://img.youtube.com/vi/dKGi7tLjiSU/maxresdefault.jpg" width="75%">](https://youtu.be/dKGi7tLjiSU)
 
 
 # WiscShop API
