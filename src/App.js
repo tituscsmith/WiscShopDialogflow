@@ -13,7 +13,7 @@ import CartConfirmed from './components/CartConfirmed';
 import Category from './components/Category';
 import Product from './components/Product';
 import Error from './components/Error';
-import Messages from './components/Messages';
+// import Messages from './components/Messages';
 
 import {BrowserRouter as Router, Switch, Route} from "react-router-dom";
 import base64 from 'base-64';
@@ -69,15 +69,15 @@ class App extends React.Component {
           </div>
         </Router>
 
-        <div style={{display: 'flex', position: 'fixed', right: 0, bottom: 0}}>
-        {
-          localStorage.getItem('auth') ? <Messages/> : <></>
-        }
-        </div>
+
       </>
     )
   }
-
+  // <div style={{display: 'flex', position: 'fixed', right: 0, bottom: 0}}>
+  // {
+  //   localStorage.getItem('auth') ? <Messages/> : <></>
+  // }
+  // </div>
   componentDidMount() {
     this.fetchCategories();
     this.fetchProducts();

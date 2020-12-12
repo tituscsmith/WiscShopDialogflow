@@ -273,13 +273,12 @@ app.post('/', express.json(), (req, res) => {
                 'x-access-token': token},
       redirect: 'follow'
     }
-  
+
     var serverReturn = await fetch(ENDPOINT_URL + '/products/' + id,request).catch(error => console.log(error));
-    // var serverResponse = await serverReturn.json()
+    var serverResponse = await serverReturn.json()
     details = serverResponse;
 
     var reviews = '';
-
     //Review API Call
     request = {
       method: 'GET',
@@ -581,7 +580,36 @@ app.post('/', express.json(), (req, res) => {
     agent.add("Okay " + username + ", Here are the tags for " + agent.parameters.clothingcategory + ": " + data.tags.join(', '));
     await sendMessage("Okay " + username + ", Here are the tags for " + agent.parameters.clothingcategory + ": " + data.tags.join(', '), false);
   }
-
+  async function awaitingCategoryForTags(){
+    await sendMessage(agent.query, true);
+     //Confirm user is logged in
+     if(!token){
+      agent.add("Hello, please login to access the shop's features.");
+      await sendMessage("Hello, please login to access the shop's features.", false)
+      return;
+   }
+   if(!agent.parameters.clothingcategory){
+    agent.add("Please provide a product name to add.");
+    await sendMessage("Please provide a product name to add.", false)
+    return;
+  }
+  else{
+    let request = {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json',
+                'x-access-token': token},
+      redirect: 'follow'
+    }
+  
+    const serverReturn = await fetch(ENDPOINT_URL + '/categories/'+agent.parameters.clothingcategory + '/tags/',request)
+    const serverResponse = await serverReturn.json()
+    data = serverResponse;
+    
+    agent.add("Okay " + username + ", Here are the tags for " + agent.parameters.clothingcategory + ": " + data.tags.join(', '));
+    await sendMessage("Okay " + username + ", Here are the tags for " + agent.parameters.clothingcategory + ": " + data.tags.join(', '), false);
+    return;
+  }
+  }
   async function userProvidesProductMedium(){
     await sendMessage(agent.query, true);
 
@@ -896,6 +924,7 @@ app.post('/', express.json(), (req, res) => {
   intentMap.set('Default Welcome Intent', welcome)
   intentMap.set('getCategories', getCategories)
   intentMap.set('getCategoryTags', getCategoryTags)
+  intentMap.set('awaitingCategoryForTags', awaitingCategoryForTags)
   intentMap.set('UserProvidesUsername', gotUsername)
   intentMap.set('userProvidesPassword', gotPassword)
   intentMap.set('getProductReviews', getProductAndReviews)
