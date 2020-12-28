@@ -1,0 +1,24 @@
+{
+  "files": {
+    "main.css": "/tituscsmith/WiscShopDialogflow/static/css/main.40f2b289.chunk.css",
+    "main.js": "/tituscsmith/WiscShopDialogflow/static/js/main.8608f12d.chunk.js",
+    "main.js.map": "/tituscsmith/WiscShopDialogflow/static/js/main.8608f12d.chunk.js.map",
+    "runtime-main.js": "/tituscsmith/WiscShopDialogflow/static/js/runtime-main.deefa3e4.js",
+    "runtime-main.js.map": "/tituscsmith/WiscShopDialogflow/static/js/runtime-main.deefa3e4.js.map",
+    "static/css/2.b0bb7f2c.chunk.css": "/tituscsmith/WiscShopDialogflow/static/css/2.b0bb7f2c.chunk.css",
+    "static/js/2.1824ffa6.chunk.js": "/tituscsmith/WiscShopDialogflow/static/js/2.1824ffa6.chunk.js",
+    "static/js/2.1824ffa6.chunk.js.map": "/tituscsmith/WiscShopDialogflow/static/js/2.1824ffa6.chunk.js.map",
+    "index.html": "/tituscsmith/WiscShopDialogflow/index.html",
+    "precache-manifest.1f0e83c18c2c9886ad65ee5ece035cef.js": "/tituscsmith/WiscShopDialogflow/precache-manifest.1f0e83c18c2c9886ad65ee5ece035cef.js",
+    "service-worker.js": "/tituscsmith/WiscShopDialogflow/service-worker.js",
+    "static/css/2.b0bb7f2c.chunk.css.map": "/tituscsmith/WiscShopDialogflow/static/css/2.b0bb7f2c.chunk.css.map",
+    "static/css/main.40f2b289.chunk.css.map": "/tituscsmith/WiscShopDialogflow/static/css/main.40f2b289.chunk.css.map"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.deefa3e4.js",
+    "static/css/2.b0bb7f2c.chunk.css",
+    "static/js/2.1824ffa6.chunk.js",
+    "static/css/main.40f2b289.chunk.css",
+    "static/js/main.8608f12d.chunk.js"
+  ]
+}
